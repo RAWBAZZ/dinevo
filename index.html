@@ -86,7 +86,8 @@ body::before{
   transition:opacity .9s var(--ease), visibility .9s;
 }
 #preloader.hide{ opacity:0; visibility:hidden; }
-#preloader .pl-logo{ width:110px; height:110px; }
+#preloader .pl-logo{ width:110px; height:110px; object-fit:contain; animation:plPulse 1.6s ease-in-out infinite; filter:drop-shadow(0 0 24px rgba(201,162,39,.35)); }
+@keyframes plPulse{ 0%,100%{ transform:scale(1); opacity:.85; } 50%{ transform:scale(1.06); opacity:1; } }
 
 /* ===================== NAV ===================== */
 nav{
@@ -98,7 +99,7 @@ nav{
   transition:background .4s;
 }
 .nav-brand{ display:flex; align-items:center; gap:12px; }
-.nav-brand svg{ width:32px; height:32px; }
+.nav-brand img{ width:32px; height:32px; object-fit:contain; }
 .nav-brand span{ font-family:'Michroma'; font-size:16px; letter-spacing:.12em; }
 .nav-links{ display:flex; gap:36px; font-size:13px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-dim); }
 .nav-links a{ position:relative; transition:color .3s; }
@@ -130,8 +131,13 @@ nav{
 }
 @keyframes rotateRays{ to{ transform:rotate(360deg); } }
 
-.hero-logo-wrap{ width:200px; height:230px; margin-bottom:6px; position:relative; }
-.hero-logo-wrap svg{ width:100%; height:100%; overflow:visible; }
+.hero-logo-wrap{ width:220px; height:220px; margin-bottom:6px; position:relative; }
+.hero-logo-wrap img{
+  width:100%; height:100%; object-fit:contain; border-radius:20px;
+  animation:logoFloat 5s ease-in-out infinite;
+  filter:drop-shadow(0 10px 40px rgba(201,162,39,.35));
+}
+@keyframes logoFloat{ 0%,100%{ transform:translateY(0); filter:drop-shadow(0 10px 40px rgba(201,162,39,.35)); } 50%{ transform:translateY(-10px); filter:drop-shadow(0 20px 55px rgba(201,162,39,.55)); } }
 
 .hero h1{
   font-size:clamp(40px,7vw,84px);
@@ -398,7 +404,7 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 
 /* ===================== FOOTER ===================== */
 footer{ border-top:1px solid var(--line); padding:70px 0 30px; text-align:center; }
-footer .flogo{ width:52px; height:60px; margin:0 auto 18px; }
+footer .flogo{ width:52px; height:60px; margin:0 auto 18px; object-fit:contain; }
 footer h3{ font-size:20px; margin-bottom:10px; }
 footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 auto; }
 .foot-links{ display:flex; justify-content:center; gap:30px; margin:34px 0; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); flex-wrap:wrap; }
@@ -416,29 +422,13 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 
 <!-- PRELOADER -->
 <div id="preloader">
-  <svg class="pl-logo" viewBox="0 0 200 230">
-    <defs>
-      <linearGradient id="metalPre" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#eef0f2"/><stop offset="45%" stop-color="#8b8f98"/><stop offset="100%" stop-color="#3a3d43"/>
-      </linearGradient>
-    </defs>
-    <use href="#dinevo-mark" fill="url(#metalPre)"/>
-  </svg>
+  <img src="logo-icon.png" alt="Dinevo" class="pl-logo">
 </div>
-
-<svg width="0" height="0" style="position:absolute">
-  <symbol id="dinevo-mark" viewBox="0 0 200 230">
-    <path d="M60 30 H108 C142 30 168 56 168 92 C168 118 154 138 132 148 L100 205 L68 148 C46 138 32 118 32 92 C32 68 46 48 68 36 Z
-      M78 55 L78 118 L100 132 L122 118 L122 55 L100 68 Z" fill-rule="evenodd"/>
-  </symbol>
-</svg>
 
 <!-- NAV -->
 <nav>
   <div class="nav-brand">
-    <svg viewBox="0 0 200 230"><use href="#dinevo-mark" fill="url(#navGrad)"/>
-      <defs><linearGradient id="navGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f1d68c"/><stop offset="60%" stop-color="#9CA3AF"/><stop offset="100%" stop-color="#4b4e54"/></linearGradient></defs>
-    </svg>
+    <img src="logo-icon.png" alt="Dinevo">
     <span>DINEVO</span>
   </div>
   <div class="nav-links">
@@ -455,26 +445,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 <header class="hero">
   <div class="hero-rays"></div>
   <div class="hero-logo-wrap" id="heroLogo">
-    <svg viewBox="0 0 200 230">
-      <defs>
-        <linearGradient id="metalHero" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#f4f5f6"/>
-          <stop offset="35%" stop-color="#aeb2ba"/>
-          <stop offset="60%" stop-color="#787c85"/>
-          <stop offset="100%" stop-color="#2c2e33"/>
-        </linearGradient>
-        <linearGradient id="sweepHero" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="transparent"/>
-          <stop offset="45%" stop-color="rgba(255,255,255,0)"/>
-          <stop offset="50%" stop-color="rgba(255,255,255,.85)"/>
-          <stop offset="55%" stop-color="rgba(255,255,255,0)"/>
-          <stop offset="100%" stop-color="transparent"/>
-          <animateTransform attributeName="gradientTransform" type="translate" from="-1 0" to="1 0" dur="3.2s" repeatCount="indefinite"/>
-        </linearGradient>
-      </defs>
-      <use href="#dinevo-mark" fill="url(#metalHero)"/>
-      <use href="#dinevo-mark" fill="url(#sweepHero)" opacity="0.55"/>
-    </svg>
+    <img src="logo.png" alt="Dinevo logo">
   </div>
   <div class="eyebrow" style="justify-content:center;margin-top:8px;">RESERVATIONS, REIMAGINED</div>
   <h1>The Future of<br><span class="accent">Restaurant Bookings</span></h1>
@@ -628,9 +599,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 <!-- FOOTER -->
 <footer>
   <div class="container">
-    <svg class="flogo" viewBox="0 0 200 230"><use href="#dinevo-mark" fill="url(#footGrad)"/>
-      <defs><linearGradient id="footGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f1d68c"/><stop offset="100%" stop-color="#4b4e54"/></linearGradient></defs>
-    </svg>
+    <img class="flogo" src="logo-icon.png" alt="Dinevo">
     <h3>DINEVO</h3>
     <p>The future of restaurant bookings — where restaurants compete for your table, not the other way around.</p>
     <div class="foot-links">
