@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dinevo — The Future of Restaurant Bookings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===================== TOKENS ===================== */
+:root{
+  --bg: #080705;
+  --bg-soft: #0e0c08;
+  --surface: #15130d;
+  --surface-2: #1b1811;
+  --line: #2a251a;
+  --steel: #b8bcc4;
+  --steel-dim: #6d7078;
+  --gold: #c9a227;
+  --gold-hi: #f1d68c;
+  --gold-dim: #8a6f22;
+  --text: #eae6da;
+  --text-dim: #9a9686;
+  --text-faint: #6b6858;
+  --veg: #4c9a5b;
+  --nonveg: #b4483e;
+  --jain: #d98a34;
+  --radius: 14px;
+  --ease: cubic-bezier(.16,.84,.44,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Manrope',sans-serif;
+  font-weight:400;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{ background:var(--gold-dim); color:var(--bg); }
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold-dim); border-radius:4px;}
+
+h1,h2,h3,.display{
+  font-family:'Michroma', sans-serif;
+  letter-spacing:0.02em;
+  font-weight:400;
+  color:var(--text);
+}
+.mono{ font-family:'JetBrains Mono', monospace; }
+.eyebrow{
+  font-family:'JetBrains Mono', monospace;
+  text-transform:uppercase;
+  letter-spacing:0.28em;
+  font-size:12px;
+  color:var(--gold);
+  display:flex; align-items:center; gap:10px;
+}
+.eyebrow::before{
+  content:''; width:22px; height:1px; background:var(--gold);
+}
+.container{ max-width:1200px; margin:0 auto; padding:0 28px; }
+a{ color:inherit; text-decoration:none; }
+img,svg{ display:block; }
+button{ font-family:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+
+/* subtle ambient grain + glow backdrop */
+body::before{
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 900px 600px at 50% -10%, rgba(201,162,39,.10), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 30%, rgba(201,162,39,.05), transparent 60%);
+}
+.noise{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ===================== PRELOADER ===================== */
+#preloader{
+  position:fixed; inset:0; background:var(--bg); z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+  transition:opacity .9s var(--ease), visibility .9s;
+}
+#preloader.hide{ opacity:0; visibility:hidden; }
+#preloader .pl-logo{ width:110px; height:110px; }
+
+/* ===================== NAV ===================== */
+nav{
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 40px;
+  backdrop-filter:blur(14px);
+  background:linear-gradient(to bottom, rgba(8,7,5,.85), rgba(8,7,5,0));
+  transition:background .4s;
+}
+.nav-brand{ display:flex; align-items:center; gap:12px; }
+.nav-brand svg{ width:32px; height:32px; }
+.nav-brand span{ font-family:'Michroma'; font-size:16px; letter-spacing:.12em; }
+.nav-links{ display:flex; gap:36px; font-size:13px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-dim); }
+.nav-links a{ position:relative; transition:color .3s; }
+.nav-links a::after{
+  content:''; position:absolute; left:0; bottom:-6px; width:0; height:1px; background:var(--gold);
+  transition:width .35s var(--ease);
+}
+.nav-links a:hover{ color:var(--gold-hi); }
+.nav-links a:hover::after{ width:100%; }
+.nav-cta{
+  border:1px solid var(--gold-dim); padding:10px 22px; border-radius:100px; font-size:12px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--gold-hi);
+  transition:all .35s var(--ease);
+}
+.nav-cta:hover{ background:var(--gold); color:#0a0906; box-shadow:0 0 24px rgba(201,162,39,.5); }
+@media(max-width:860px){ .nav-links{display:none;} }
+
+/* ===================== HERO ===================== */
+.hero{
+  min-height:100svh; position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:140px 24px 80px;
+  overflow:hidden;
+}
+.hero-rays{
+  position:absolute; inset:0; z-index:-1;
+  background:conic-gradient(from 180deg at 50% 30%, transparent 0deg, rgba(201,162,39,.05) 8deg, transparent 16deg, transparent 40deg, rgba(201,162,39,.04) 48deg, transparent 56deg);
+  animation:rotateRays 40s linear infinite;
+}
+@keyframes rotateRays{ to{ transform:rotate(360deg); } }
+
+.hero-logo-wrap{ width:200px; height:230px; margin-bottom:6px; position:relative; }
+.hero-logo-wrap svg{ width:100%; height:100%; overflow:visible; }
+
+.hero h1{
+  font-size:clamp(40px,7vw,84px);
+  line-height:0.95;
+  margin-top:18px;
+  background:linear-gradient(180deg, #f4f1e8 0%, #d9d4c2 45%, #b8bcc4 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 2px 30px rgba(201,162,39,.15));
+}
+.hero .accent{
+  background:linear-gradient(120deg, var(--gold-dim), var(--gold-hi) 50%, var(--gold-dim));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  background-size:200% auto; animation:shine 4s linear infinite;
+}
+@keyframes shine{ to{ background-position:200% center; } }
+
+.hero p.lead{
+  max-width:560px; margin:26px auto 0; color:var(--text-dim); font-size:17px; line-height:1.7;
+}
+.hero-ctas{ display:flex; gap:16px; margin-top:42px; flex-wrap:wrap; justify-content:center; }
+.btn-primary, .btn-ghost{
+  padding:16px 34px; border-radius:100px; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  transition:all .4s var(--ease); display:inline-flex; align-items:center; gap:10px;
+}
+.btn-primary{ background:linear-gradient(120deg, var(--gold-dim), var(--gold) 50%, var(--gold-hi)); color:#0b0904; font-weight:600; box-shadow:0 8px 30px -8px rgba(201,162,39,.6); }
+.btn-primary:hover{ transform:translateY(-3px); box-shadow:0 14px 40px -6px rgba(201,162,39,.75); }
+.btn-ghost{ border:1px solid var(--line); color:var(--text-dim); }
+.btn-ghost:hover{ border-color:var(--gold-dim); color:var(--gold-hi); }
+
+.hero-scroll{
+  position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--text-faint);
+  font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+}
+.hero-scroll .line{ width:1px; height:36px; background:linear-gradient(var(--gold), transparent); animation:scrollLine 2s ease-in-out infinite; }
+@keyframes scrollLine{ 0%,100%{ opacity:.2; } 50%{ opacity:1; } }
+
+/* stat strip */
+.stat-strip{
+  display:flex; justify-content:center; gap:64px; margin-top:64px; flex-wrap:wrap;
+  padding-top:40px; border-top:1px solid var(--line); width:100%; max-width:780px;
+}
+.stat-strip .stat{ text-align:center; }
+.stat-strip .stat b{ font-family:'JetBrains Mono'; font-size:28px; color:var(--gold-hi); display:block; }
+.stat-strip .stat span{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.14em; }
+
+/* ===================== REVEAL ===================== */
+.reveal{ opacity:0; transform:translateY(40px); transition:opacity .9s var(--ease), transform .9s var(--ease); }
+.reveal.in{ opacity:1; transform:translateY(0); }
+.reveal.stagger.in > *{ animation:none; }
+
+section{ position:relative; z-index:2; padding:130px 0; }
+.section-head{ text-align:center; max-width:640px; margin:0 auto 64px; }
+.section-head h2{ font-size:clamp(28px,4vw,46px); margin-top:18px; line-height:1.15; }
+.section-head p{ color:var(--text-dim); margin-top:16px; font-size:16px; line-height:1.7; }
+
+/* ===================== FLOW TIMELINE ===================== */
+.flow{ background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.flow-wrap{ position:relative; max-width:560px; margin:0 auto; }
+.flow-line{
+  position:absolute; left:23px; top:8px; bottom:8px; width:2px; background:var(--line);
+}
+.flow-line-fill{
+  position:absolute; left:0; top:0; width:100%; height:0%; background:linear-gradient(var(--gold-hi), var(--gold-dim));
+  transition:height 1.2s var(--ease); box-shadow:0 0 12px var(--gold);
+}
+.flow-step{ position:relative; padding:0 0 46px 68px; }
+.flow-step:last-child{ padding-bottom:0; }
+.flow-node{
+  position:absolute; left:0; top:-2px; width:48px; height:48px; border-radius:50%;
+  border:1px solid var(--line); background:var(--surface);
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+  transition:border-color .5s, box-shadow .5s, background .5s;
+}
+.flow-step.on .flow-node{ border-color:var(--gold); box-shadow:0 0 22px rgba(201,162,39,.5); background:var(--surface-2); }
+.flow-step h4{ font-family:'Michroma'; font-size:14px; letter-spacing:.04em; color:var(--text); }
+.flow-step p{ color:var(--text-faint); font-size:13.5px; margin-top:6px; }
+
+/* ===================== WIZARD ===================== */
+.wizard{ }
+.wizard-card{
+  background:linear-gradient(160deg, var(--surface), var(--surface-2));
+  border:1px solid var(--line); border-radius:24px; padding:48px;
+  max-width:880px; margin:0 auto; position:relative; overflow:hidden;
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.7);
+}
+.wizard-card::before{
+  content:''; position:absolute; top:-2px; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.progress-dots{ display:flex; gap:6px; justify-content:center; margin-bottom:36px; flex-wrap:wrap; }
+.progress-dots span{
+  width:26px; height:4px; border-radius:2px; background:var(--line); transition:all .4s var(--ease);
+}
+.progress-dots span.active{ background:var(--gold); box-shadow:0 0 10px var(--gold); width:34px; }
+.progress-dots span.done{ background:var(--gold-dim); }
+
+.step-label{ text-align:center; margin-bottom:8px; }
+.step-label .num{ font-family:'JetBrains Mono'; color:var(--gold); font-size:12px; letter-spacing:.2em; }
+.step-label h3{ font-size:24px; margin-top:8px; }
+.step-label p{ color:var(--text-faint); font-size:13.5px; margin-top:6px; }
+
+.step-body{ margin-top:36px; min-height:200px; }
+.option-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+.opt{
+  border:1px solid var(--line); border-radius:12px; padding:20px 16px; text-align:center;
+  background:rgba(255,255,255,.015); transition:all .3s var(--ease); position:relative;
+}
+.opt .ic{ font-size:26px; margin-bottom:10px; display:block; }
+.opt .lbl{ font-size:13.5px; color:var(--text-dim); }
+.opt:hover{ border-color:var(--gold-dim); transform:translateY(-3px); }
+.opt.sel{ border-color:var(--gold); background:rgba(201,162,39,.09); box-shadow:0 0 22px -6px rgba(201,162,39,.45); }
+.opt.sel .lbl{ color:var(--gold-hi); }
+
+.chip-row{ display:flex; flex-wrap:wrap; gap:10px; }
+.chip{
+  border:1px solid var(--line); border-radius:100px; padding:10px 18px; font-size:13px; color:var(--text-dim);
+  transition:all .3s var(--ease);
+}
+.chip:hover{ border-color:var(--gold-dim); }
+.chip.sel{ background:var(--gold); border-color:var(--gold); color:#0b0904; font-weight:600; }
+
+.counter-row{ display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border:1px solid var(--line); border-radius:12px; margin-bottom:14px; }
+.counter-row .lbl{ display:flex; flex-direction:column; }
+.counter-row .lbl b{ font-size:15px; }
+.counter-row .lbl span{ font-size:12px; color:var(--text-faint); }
+.counter{ display:flex; align-items:center; gap:16px; }
+.counter button{
+  width:34px; height:34px; border-radius:50%; border:1px solid var(--line); font-size:16px; color:var(--gold-hi);
+  transition:all .25s;
+}
+.counter button:hover{ border-color:var(--gold); background:rgba(201,162,39,.1); }
+.counter .val{ font-family:'JetBrains Mono'; font-size:17px; width:22px; text-align:center; }
+
+.bill-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
+.bill-opt{ border:1px solid var(--line); border-radius:12px; padding:18px 12px; text-align:center; font-family:'JetBrains Mono'; font-size:16px; color:var(--text-dim); transition:all .3s; }
+.bill-opt:hover{ border-color:var(--gold-dim); }
+.bill-opt.sel{ border-color:var(--gold); background:rgba(201,162,39,.09); color:var(--gold-hi); }
+
+.datetime-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+input[type=date], input[type=time], input[type=text]{
+  background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:12px 16px;
+  font-family:'JetBrains Mono'; font-size:14px; flex:1; min-width:150px;
+}
+input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
+
+.wizard-nav{ display:flex; justify-content:space-between; margin-top:44px; }
+.wnav-btn{ padding:13px 28px; border-radius:100px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; transition:all .35s var(--ease); }
+.wnav-btn.next{ background:linear-gradient(120deg, var(--gold-dim), var(--gold-hi)); color:#0b0904; font-weight:700; }
+.wnav-btn.next:hover{ transform:translateY(-2px); box-shadow:0 10px 30px -8px rgba(201,162,39,.6); }
+.wnav-btn.back{ border:1px solid var(--line); color:var(--text-faint); }
+.wnav-btn.back:hover{ color:var(--text); border-color:var(--text-faint); }
+.wnav-btn:disabled{ opacity:.35; pointer-events:none; }
+
+/* ===================== RESTAURANT CARDS ===================== */
+.rest-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:26px; margin-top:20px; }
+.rest-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px; overflow:hidden;
+  transition:transform .5s var(--ease), border-color .5s, box-shadow .5s; position:relative;
+}
+.rest-card:hover{ transform:translateY(-8px); border-color:var(--gold-dim); box-shadow:0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(201,162,39,.15); }
+.rest-media{
+  height:150px; position:relative; display:flex; align-items:center; justify-content:center; font-size:52px;
+  overflow:hidden;
+}
+.rest-media .bg{ position:absolute; inset:0; opacity:.9; }
+.rest-media .tag{
+  position:absolute; top:12px; left:12px; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  padding:5px 10px; border-radius:100px; font-family:'JetBrains Mono'; backdrop-filter:blur(6px);
+}
+.tag.veg{ background:rgba(76,154,91,.2); color:#8fd39c; border:1px solid rgba(76,154,91,.4); }
+.tag.nonveg{ background:rgba(180,72,62,.2); color:#e6968c; border:1px solid rgba(180,72,62,.4); }
+.tag.both{ background:rgba(217,138,52,.2); color:#f0b876; border:1px solid rgba(217,138,52,.4); }
+.rest-media .status{
+  position:absolute; top:12px; right:12px; font-size:10px; padding:5px 10px; border-radius:100px;
+  font-family:'JetBrains Mono'; letter-spacing:.06em;
+}
+.status.open{ background:rgba(76,154,91,.2); color:#8fd39c; }
+.status.closed{ background:rgba(120,120,120,.2); color:#aaa; }
+.rest-body{ padding:22px; }
+.rest-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.rest-top h4{ font-size:17px; font-family:'Manrope'; font-weight:700; }
+.rest-rating{ display:flex; align-items:center; gap:5px; font-family:'JetBrains Mono'; font-size:13px; color:var(--gold-hi); white-space:nowrap; }
+.rest-meta{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; font-size:12px; color:var(--text-faint); }
+.rest-meta span{ display:flex; align-items:center; gap:5px; }
+.rest-discount{
+  margin-top:14px; padding:10px 14px; border-radius:10px; background:rgba(201,162,39,.08);
+  border:1px dashed var(--gold-dim); font-size:12.5px; color:var(--gold-hi); display:flex; align-items:center; gap:8px;
+}
+.rest-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
+.rest-foot .cost{ font-family:'JetBrains Mono'; font-size:14px; }
+.rest-foot .cost span{ color:var(--text-faint); font-size:11px; display:block; }
+.select-btn{
+  padding:9px 20px; border-radius:100px; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em;
+  border:1px solid var(--gold-dim); color:var(--gold-hi); transition:all .3s var(--ease);
+}
+.select-btn.sel{ background:var(--gold); color:#0b0904; border-color:var(--gold); }
+.select-btn:hover{ box-shadow:0 0 16px rgba(201,162,39,.4); }
+
+.send-request-bar{
+  display:flex; justify-content:space-between; align-items:center; margin-top:32px; padding:20px 28px;
+  border:1px solid var(--line); border-radius:16px; background:var(--surface); flex-wrap:wrap; gap:16px;
+}
+.send-request-bar .count{ font-size:14px; color:var(--text-dim); }
+.send-request-bar .count b{ color:var(--gold-hi); font-family:'JetBrains Mono'; }
+
+/* ===================== DISHES MARQUEE ===================== */
+.dish-marquee{ overflow:hidden; margin-top:60px; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
+.dish-track{ display:flex; gap:22px; width:max-content; animation:marquee 32s linear infinite; }
+.dish-marquee:hover .dish-track{ animation-play-state:paused; }
+@keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+.dish-card{
+  width:190px; padding:28px 20px; border-radius:16px; background:var(--surface); border:1px solid var(--line);
+  text-align:center; flex-shrink:0; transition:transform .4s var(--ease), border-color .4s;
+}
+.dish-card:hover{ transform:translateY(-6px) scale(1.03); border-color:var(--gold-dim); }
+.dish-card .emo{ font-size:44px; margin-bottom:14px; filter:drop-shadow(0 6px 14px rgba(0,0,0,.5)); }
+.dish-card h5{ font-size:14px; font-weight:700; }
+.dish-card span{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; }
+
+/* ===================== NOTIFICATION MOCKUP ===================== */
+.notif-wrap{ display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+@media(max-width:900px){ .notif-wrap{ grid-template-columns:1fr; } }
+.phone{
+  width:320px; margin:0 auto; border-radius:36px; border:1px solid var(--line);
+  background:linear-gradient(160deg, var(--surface), #0c0a06); padding:22px;
+  box-shadow:0 40px 100px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(201,162,39,.08);
+  position:relative;
+}
+.phone::before{ content:''; position:absolute; top:14px; left:50%; transform:translateX(-50%); width:60px; height:5px; border-radius:3px; background:var(--line); }
+.notif-card{ margin-top:24px; background:var(--surface-2); border:1px solid var(--line); border-radius:16px; padding:20px; }
+.notif-card .head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.notif-card .head b{ font-size:13px; color:var(--gold-hi); }
+.notif-card .head span{ font-size:10px; color:var(--text-faint); font-family:'JetBrains Mono'; }
+.notif-row{ display:flex; justify-content:space-between; font-size:12.5px; padding:7px 0; color:var(--text-dim); border-bottom:1px solid rgba(255,255,255,.04); }
+.notif-row b{ color:var(--text); font-weight:600; }
+.offer-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:16px; }
+.offer-btn{ padding:10px 0; text-align:center; border-radius:8px; border:1px solid var(--line); font-family:'JetBrains Mono'; font-size:12px; color:var(--text-dim); transition:all .25s; }
+.offer-btn:hover, .offer-btn.pick{ border-color:var(--gold); background:rgba(201,162,39,.12); color:var(--gold-hi); }
+.addon-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+.addon{ font-size:10.5px; padding:6px 10px; border-radius:100px; background:rgba(255,255,255,.04); color:var(--text-faint); }
+.timer-bar{ margin-top:16px; height:4px; border-radius:2px; background:var(--line); overflow:hidden; }
+.timer-fill{ height:100%; width:70%; background:linear-gradient(90deg,var(--gold-dim),var(--gold-hi)); animation:pulseTimer 2.4s ease-in-out infinite; }
+@keyframes pulseTimer{ 0%,100%{opacity:.7;} 50%{opacity:1;} }
+
+.notif-copy .eyebrow{ margin-bottom:18px; }
+.notif-copy h2{ font-size:clamp(26px,3.4vw,38px); margin-bottom:18px; line-height:1.2; }
+.notif-copy p{ color:var(--text-dim); line-height:1.75; margin-bottom:16px; font-size:15.5px; }
+.notif-copy ul{ list-style:none; margin-top:20px; }
+.notif-copy li{ display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; color:var(--text-dim); }
+.notif-copy li b{ color:var(--gold-hi); font-family:'JetBrains Mono'; font-size:12px; min-width:26px; }
+
+/* ===================== SMART MATCHING ===================== */
+.match-demo{
+  background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:40px; margin-top:50px;
+}
+.match-demo .chip-row{ justify-content:center; margin-bottom:26px; }
+.match-result{ text-align:center; }
+.match-result .big{ font-family:'JetBrains Mono'; font-size:52px; color:var(--gold-hi); transition:all .4s var(--ease); }
+.match-result .lbl{ color:var(--text-faint); font-size:13px; letter-spacing:.1em; text-transform:uppercase; margin-top:6px; }
+.match-bars{ display:flex; gap:6px; justify-content:center; margin-top:26px; flex-wrap:wrap; }
+.match-bar{ width:14px; height:34px; border-radius:3px; background:var(--line); transition:all .5s var(--ease); }
+.match-bar.on{ background:linear-gradient(var(--gold-hi),var(--gold-dim)); box-shadow:0 0 10px rgba(201,162,39,.5); }
+
+/* ===================== FOOTER ===================== */
+footer{ border-top:1px solid var(--line); padding:70px 0 30px; text-align:center; }
+footer .flogo{ width:52px; height:60px; margin:0 auto 18px; }
+footer h3{ font-size:20px; margin-bottom:10px; }
+footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 auto; }
+.foot-links{ display:flex; justify-content:center; gap:30px; margin:34px 0; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); flex-wrap:wrap; }
+.foot-links a:hover{ color:var(--gold-hi); }
+.foot-bottom{ margin-top:40px; padding-top:24px; border-top:1px solid var(--line); font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono'; }
+
+@media(prefers-reduced-motion: reduce){
+  *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <svg class="pl-logo" viewBox="0 0 200 230">
+    <defs>
+      <linearGradient id="metalPre" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#eef0f2"/><stop offset="45%" stop-color="#8b8f98"/><stop offset="100%" stop-color="#3a3d43"/>
+      </linearGradient>
+    </defs>
+    <use href="#dinevo-mark" fill="url(#metalPre)"/>
+  </svg>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="dinevo-mark" viewBox="0 0 200 230">
+    <path d="M60 30 H108 C142 30 168 56 168 92 C168 118 154 138 132 148 L100 205 L68 148 C46 138 32 118 32 92 C32 68 46 48 68 36 Z
+      M78 55 L78 118 L100 132 L122 118 L122 55 L100 68 Z" fill-rule="evenodd"/>
+  </symbol>
+</svg>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <svg viewBox="0 0 200 230"><use href="#dinevo-mark" fill="url(#navGrad)"/>
+      <defs><linearGradient id="navGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f1d68c"/><stop offset="60%" stop-color="#9CA3AF"/><stop offset="100%" stop-color="#4b4e54"/></linearGradient></defs>
+    </svg>
+    <span>DINEVO</span>
+  </div>
+  <div class="nav-links">
+    <a href="#flow">How it works</a>
+    <a href="#book">Book a table</a>
+    <a href="#restaurants">Restaurants</a>
+    <a href="#dishes">Cuisine</a>
+    <a href="#matching">Smart matching</a>
+  </div>
+  <a href="#book" class="nav-cta">Start booking</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-rays"></div>
+  <div class="hero-logo-wrap" id="heroLogo">
+    <svg viewBox="0 0 200 230">
+      <defs>
+        <linearGradient id="metalHero" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f4f5f6"/>
+          <stop offset="35%" stop-color="#aeb2ba"/>
+          <stop offset="60%" stop-color="#787c85"/>
+          <stop offset="100%" stop-color="#2c2e33"/>
+        </linearGradient>
+        <linearGradient id="sweepHero" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="transparent"/>
+          <stop offset="45%" stop-color="rgba(255,255,255,0)"/>
+          <stop offset="50%" stop-color="rgba(255,255,255,.85)"/>
+          <stop offset="55%" stop-color="rgba(255,255,255,0)"/>
+          <stop offset="100%" stop-color="transparent"/>
+          <animateTransform attributeName="gradientTransform" type="translate" from="-1 0" to="1 0" dur="3.2s" repeatCount="indefinite"/>
+        </linearGradient>
+      </defs>
+      <use href="#dinevo-mark" fill="url(#metalHero)"/>
+      <use href="#dinevo-mark" fill="url(#sweepHero)" opacity="0.55"/>
+    </svg>
+  </div>
+  <div class="eyebrow" style="justify-content:center;margin-top:8px;">RESERVATIONS, REIMAGINED</div>
+  <h1>The Future of<br><span class="accent">Restaurant Bookings</span></h1>
+  <p class="lead">Name your table, your time, and your budget. Nearby restaurants compete with real discounts and perks to earn your visit — you just show up and enjoy.</p>
+  <div class="hero-ctas">
+    <a href="#book" class="btn-primary">Reserve a table →</a>
+    <a href="#flow" class="btn-ghost">See how it works</a>
+  </div>
+  <div class="stat-strip">
+    <div class="stat"><b>1,200+</b><span>Partner restaurants</span></div>
+    <div class="stat"><b>18%</b><span>Avg. discount won</span></div>
+    <div class="stat"><b>&lt;10min</b><span>Response time</span></div>
+    <div class="stat"><b>4.8★</b><span>Diner rating</span></div>
+  </div>
+  <div class="hero-scroll"><span>Scroll</span><div class="line"></div></div>
+</header>
+
+<!-- FLOW -->
+<section class="flow" id="flow">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">The journey</div>
+      <h2>From request to review</h2>
+      <p>Eight quiet steps stand between "I'm hungry" and a table with a discount already in hand.</p>
+    </div>
+    <div class="flow-wrap">
+      <div class="flow-line"><div class="flow-line-fill" id="flowFill"></div></div>
+      <div class="flow-step" data-i="0"><div class="flow-node">📤</div><h4>Quote sent</h4><p>Your request reaches every matching restaurant nearby.</p></div>
+      <div class="flow-step" data-i="1"><div class="flow-node">💬</div><h4>Restaurant responds</h4><p>An offer arrives — a discount, plus optional perks.</p></div>
+      <div class="flow-step" data-i="2"><div class="flow-node">✅</div><h4>You accept</h4><p>Pick the best offer among your shortlisted restaurants.</p></div>
+      <div class="flow-step" data-i="3"><div class="flow-node">🔒</div><h4>Pay 2% token</h4><p>A small token secures your table — fully adjusted later.</p></div>
+      <div class="flow-step" data-i="4"><div class="flow-node">📅</div><h4>Booking confirmed</h4><p>Your slot is locked. No calls, no waiting at the door.</p></div>
+      <div class="flow-step" data-i="5"><div class="flow-node">🍽️</div><h4>Visit the restaurant</h4><p>Arrive, be seated, enjoy the discount already agreed.</p></div>
+      <div class="flow-step" data-i="6"><div class="flow-node">🧾</div><h4>Token adjusted</h4><p>Your token is deducted straight from the final bill.</p></div>
+      <div class="flow-step" data-i="7"><div class="flow-node">⭐</div><h4>Review &amp; rating</h4><p>Rate the visit — it shapes offers for the next diner.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WIZARD -->
+<section class="wizard" id="book">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Book a table</div>
+      <h2>Tell us what you're after</h2>
+      <p>Eight quick taps and your request goes out to every restaurant that can actually serve it.</p>
+    </div>
+
+    <div class="wizard-card reveal">
+      <div class="progress-dots" id="dots"></div>
+      <div class="step-label">
+        <div class="num mono" id="stepNum">STEP 1 / 8</div>
+        <h3 id="stepTitle">Where are you dining?</h3>
+        <p id="stepSub">Share your location so we can find tables nearby.</p>
+      </div>
+      <div class="step-body" id="stepBody"></div>
+      <div class="wizard-nav">
+        <button class="wnav-btn back" id="backBtn">← Back</button>
+        <button class="wnav-btn next" id="nextBtn">Continue →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESTAURANTS -->
+<section id="restaurants">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Nearby &amp; matching</div>
+      <h2>Restaurants for your request</h2>
+      <p>Only venues that can meet your preferences appear here — filtered automatically.</p>
+    </div>
+    <div class="rest-grid reveal stagger" id="restGrid"></div>
+    <div class="send-request-bar reveal">
+      <div class="count">Selected: <b id="selCount">0</b> restaurants</div>
+      <button class="btn-primary" id="sendReqBtn" style="padding:14px 30px;">Send Request →</button>
+    </div>
+  </div>
+</section>
+
+<!-- DISHES -->
+<section id="dishes">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">On the menu tonight</div>
+      <h2>Every craving, covered</h2>
+      <p>From street-side biryani to fine-dine continental — set a cuisine preference and we'll route your request accordingly.</p>
+    </div>
+  </div>
+  <div class="dish-marquee reveal">
+    <div class="dish-track" id="dishTrack"></div>
+  </div>
+</section>
+
+<!-- NOTIFICATION MOCKUP -->
+<section id="notification" style="background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="container notif-wrap">
+    <div class="phone reveal">
+      <div class="eyebrow" style="font-size:10px;">LIVE ON RESTAURANT APP</div>
+      <div class="notif-card">
+        <div class="head"><b>New Dining Request</b><span>1.6 KM</span></div>
+        <div class="notif-row"><span>Guests</span><b>4 Adults + 2 Kids</b></div>
+        <div class="notif-row"><span>Meal</span><b>Dinner · 8:30 PM</b></div>
+        <div class="notif-row"><span>Expected bill</span><b>₹2,500</b></div>
+        <div class="notif-row"><span>Food preference</span><b>Veg &amp; Non-Veg</b></div>
+        <div class="notif-row"><span>Cuisine</span><b>North Indian</b></div>
+        <div class="timer-bar"><div class="timer-fill"></div></div>
+        <div style="font-size:10.5px;color:var(--text-faint);margin-top:6px;">Respond within 10 minutes</div>
+        <div class="offer-grid" id="offerGrid"></div>
+        <div class="addon-row">
+          <span class="addon">🍰 Free dessert</span>
+          <span class="addon">🥗 Free starter</span>
+          <span class="addon">🧒 Kids meal free</span>
+          <span class="addon">🍹 Mocktail</span>
+        </div>
+      </div>
+    </div>
+    <div class="notif-copy reveal">
+      <div class="eyebrow">Restaurant side</div>
+      <h2>Every request arrives with full context</h2>
+      <p>Restaurants see exactly who's coming, when, and what they expect to spend — so the offer they send back is realistic, not a guess.</p>
+      <ul>
+        <li><b>01</b> Party size, split by adults and kids</li>
+        <li><b>02</b> Meal, date, time slot and distance</li>
+        <li><b>03</b> Expected bill and dietary preference</li>
+        <li><b>04</b> A 10-minute window to respond with an offer</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SMART MATCHING -->
+<section id="matching">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Under the hood</div>
+      <h2>Smart matching</h2>
+      <p>Tap a food preference below to see how the pool of eligible restaurants changes in real time.</p>
+    </div>
+    <div class="match-demo reveal">
+      <div class="chip-row" id="matchChips"></div>
+      <div class="match-result">
+        <div class="big" id="matchCount">248</div>
+        <div class="lbl">restaurants notified nearby</div>
+        <div class="match-bars" id="matchBars"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <svg class="flogo" viewBox="0 0 200 230"><use href="#dinevo-mark" fill="url(#footGrad)"/>
+      <defs><linearGradient id="footGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f1d68c"/><stop offset="100%" stop-color="#4b4e54"/></linearGradient></defs>
+    </svg>
+    <h3>DINEVO</h3>
+    <p>The future of restaurant bookings — where restaurants compete for your table, not the other way around.</p>
+    <div class="foot-links">
+      <a href="#flow">How it works</a><a href="#book">Book</a><a href="#restaurants">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a>
+    </div>
+    <div class="foot-bottom">© 2026 DINEVO. Concept &amp; interface preview.</div>
+  </div>
+</footer>
+
+<script>
+/* ================= REVEAL ON SCROLL ================= */
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); } });
+},{threshold:.15});
+revealEls.forEach(el=>io.observe(el));
+
+/* preloader */
+window.addEventListener('load', ()=>{
+  setTimeout(()=>document.getElementById('preloader').classList.add('hide'), 700);
+});
+
+/* ================= FLOW TIMELINE FILL ================= */
+const flowSteps = document.querySelectorAll('.flow-step');
+const flowFill = document.getElementById('flowFill');
+function updateFlow(){
+  const wrap = document.querySelector('.flow-wrap');
+  if(!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  const vh = window.innerHeight;
+  let progress = (vh*0.8 - rect.top) / rect.height;
+  progress = Math.max(0, Math.min(1, progress));
+  flowFill.style.height = (progress*100)+'%';
+  flowSteps.forEach((s,i)=>{
+    if(progress > i/flowSteps.length + 0.02) s.classList.add('on'); else s.classList.remove('on');
+  });
+}
+window.addEventListener('scroll', updateFlow);
+updateFlow();
+
+/* ================= WIZARD ================= */
+const state = {
+  location: null, distance: null, meal: null, date:'Today', time:'20:30',
+  adults: 2, kids: 0, foodType: null, cuisines: [], bill: null
+};
+
+const steps = [
+  { title:"Where are you dining?", sub:"Share your location so we can find tables nearby.",
+    render: (body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('📍','Use current location','location','current')}
+        ${opt('🔎','Search a location','location','search')}
+      </div>`;
+    }},
+  { title:"How far can we look?", sub:"Restaurants outside this radius won't see your request.",
+    render: (body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('①','Within 1 KM','distance','1')}
+        ${opt('②','Within 2 KM','distance','2')}
+        ${opt('③','Within 3 KM','distance','3')}
+        ${opt('⑤','Within 5 KM','distance','5')}
+      </div>`;
+    }},
+  { title:"Which meal?", sub:"This decides which kitchens are even open.",
+    render:(body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('🍳','Breakfast','meal','breakfast')}
+        ${opt('🍛','Lunch','meal','lunch')}
+        ${opt('🍽️','Dinner','meal','dinner')}
+        ${opt('🌙','Late Night','meal','latenight')}
+      </div>`;
+    }},
+  { title:"Date & time", sub:"When should the table be ready?",
+    render:(body)=>{
+      body.innerHTML = `<div class="chip-row" style="margin-bottom:20px;">
+        ${chip('Today','date')}${chip('Tomorrow','date')}${chip('Custom','date')}
+      </div>
+      <div class="datetime-row">
+        <input type="date" id="customDate" />
+        <input type="time" id="timeSlot" value="20:30" />
+      </div>`;
+      setTimeout(()=>{
+        document.getElementById('timeSlot').oninput = (e)=> state.time = e.target.value;
+      },0);
+    }},
+  { title:"Number of guests", sub:"We'll pass the exact split to every restaurant.",
+    render:(body)=>{
+      body.innerHTML = `
+      <div class="counter-row"><div class="lbl"><b>Adults</b><span>Age 13+</span></div>
+        <div class="counter"><button data-c="adults" data-d="-1">−</button><span class="val" id="adultsVal">${state.adults}</span><button data-c="adults" data-d="1">+</button></div></div>
+      <div class="counter-row"><div class="lbl"><b>Kids</b><span>Under 13</span></div>
+        <div class="counter"><button data-c="kids" data-d="-1">−</button><span class="val" id="kidsVal">${state.kids}</span><button data-c="kids" data-d="1">+</button></div></div>`;
+    }},
+  { title:"Food preference", sub:"We'll only notify restaurants that can meet this.",
+    render:(body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('🟢','Veg Only','foodType','veg')}
+        ${opt('🔴','Non-Veg Only','foodType','nonveg')}
+        ${opt('🟡','Veg & Non-Veg','foodType','both')}
+        ${opt('🟠','Jain Food','foodType','jain')}
+        ${opt('💠','Pure Veg Restaurant','foodType','pureveg')}
+        ${opt('🌱','Vegan','foodType','vegan')}
+        ${opt('🌾','Gluten-Free','foodType','glutenfree')}
+      </div>`;
+    }},
+  { title:"Cuisine preference", sub:"Optional — pick as many as you like.",
+    render:(body)=>{
+      const cuisines = ['North Indian','South Indian','Chinese','Mughlai','Italian','Continental','Fast Food','Pizza','Biryani','BBQ','Seafood','Street Food','Cafe','Desserts','Multi Cuisine'];
+      body.innerHTML = `<div class="chip-row">` + cuisines.map(c=>`<button class="chip" data-cuisine="${c}">${c}</button>`).join('') + `</div>`;
+      setTimeout(()=>{
+        body.querySelectorAll('[data-cuisine]').forEach(b=>{
+          if(state.cuisines.includes(b.dataset.cuisine)) b.classList.add('sel');
+          b.onclick = ()=>{
+            const c = b.dataset.cuisine;
+            if(state.cuisines.includes(c)){ state.cuisines = state.cuisines.filter(x=>x!==c); b.classList.remove('sel'); }
+            else{ state.cuisines.push(c); b.classList.add('sel'); }
+          };
+        });
+      },0);
+    }},
+  { title:"Expected bill", sub:"Helps restaurants judge the likely order and offer a fair discount.",
+    render:(body)=>{
+      body.innerHTML = `<div class="bill-grid">
+        ${billOpt('₹500')}${billOpt('₹1,000')}${billOpt('₹2,500')}${billOpt('₹5,000')}${billOpt('Custom')}
+      </div>
+      <input type="text" id="customBill" placeholder="Enter custom amount ₹" style="margin-top:16px; width:100%; display:none;" />`;
+    }}
+];
+
+function opt(icon,label,key,val){
+  const sel = state[key]===val ? 'sel':'';
+  return `<div class="opt ${sel}" data-key="${key}" data-val="${val}"><span class="ic">${icon}</span><span class="lbl">${label}</span></div>`;
+}
+function chip(label,key){
+  const sel = state[key]===label ? 'sel':'';
+  return `<button class="chip ${sel}" data-key="${key}" data-val="${label}">${label}</button>`;
+}
+function billOpt(label){
+  const sel = state.bill===label ? 'sel':'';
+  return `<div class="bill-opt ${sel}" data-bill="${label}">${label}</div>`;
+}
+
+let current = 0;
+const dotsEl = document.getElementById('dots');
+const bodyEl = document.getElementById('stepBody');
+
+function renderDots(){
+  dotsEl.innerHTML = steps.map((_,i)=>`<span class="${i===current?'active':i<current?'done':''}"></span>`).join('');
+}
+
+function renderStep(){
+  document.getElementById('stepNum').textContent = `STEP ${current+1} / ${steps.length}`;
+  document.getElementById('stepTitle').textContent = steps[current].title;
+  document.getElementById('stepSub').textContent = steps[current].sub;
+  steps[current].render(bodyEl);
+  renderDots();
+  wireStep();
+  document.getElementById('backBtn').disabled = current===0;
+  document.getElementById('nextBtn').textContent = current===steps.length-1 ? 'View Restaurants →' : 'Continue →';
+}
+
+function wireStep(){
+  bodyEl.querySelectorAll('.opt[data-key]').forEach(el=>{
+    el.onclick = ()=>{
+      state[el.dataset.key] = el.dataset.val;
+      bodyEl.querySelectorAll(`.opt[data-key="${el.dataset.key}"]`).forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+    };
+  });
+  bodyEl.querySelectorAll('.chip[data-key]').forEach(el=>{
+    el.onclick = ()=>{
+      state[el.dataset.key] = el.dataset.val;
+      bodyEl.querySelectorAll(`.chip[data-key="${el.dataset.key}"]`).forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      if(el.dataset.val==='Custom'){ document.getElementById('customDate').style.display='block'; }
+    };
+  });
+  bodyEl.querySelectorAll('[data-bill]').forEach(el=>{
+    el.onclick = ()=>{
+      state.bill = el.dataset.bill;
+      bodyEl.querySelectorAll('[data-bill]').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      const custom = document.getElementById('customBill');
+      custom.style.display = el.dataset.bill==='Custom' ? 'block' : 'none';
+    };
+  });
+  bodyEl.querySelectorAll('.counter button').forEach(btn=>{
+    btn.onclick = ()=>{
+      const key = btn.dataset.c, d = parseInt(btn.dataset.d);
+      state[key] = Math.max(key==='adults'?1:0, state[key]+d);
+      document.getElementById(key+'Val').textContent = state[key];
+    };
+  });
+}
+
+document.getElementById('nextBtn').onclick = ()=>{
+  if(current < steps.length-1){ current++; renderStep(); }
+  else{ document.getElementById('restaurants').scrollIntoView({behavior:'smooth'}); buildRestaurants(); }
+};
+document.getElementById('backBtn').onclick = ()=>{ if(current>0){ current--; renderStep(); } };
+
+renderStep();
+
+/* ================= RESTAURANT LIST ================= */
+const restaurantData = [
+  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712'},
+  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f'},
+  {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f'},
+  {name:'Bombay Bistro', type:'both', cuisine:'Street Food · Fast Food', rating:4.4, dist:'1.6 KM', cost:'₹700', resp:'5 min', open:true, disc:'Usually offers 15–20% discount', emo:'🌮', bgc:'#3a3212'},
+  {name:'Jain Bhoj', type:'jain', cuisine:'North Indian · Jain', rating:4.8, dist:'2.6 KM', cost:'₹1,100', resp:'7 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍲', bgc:'#2b3a12'},
+  {name:'Osteria Nera', type:'both', cuisine:'Italian · Cafe', rating:4.5, dist:'3.4 KM', cost:'₹2,800', resp:'11 min', open:false, disc:'Usually offers 15% discount', emo:'🍝', bgc:'#231f3a'},
+  {name:'Green Bowl Vegan', type:'vegan', cuisine:'Multi Cuisine · Vegan', rating:4.6, dist:'1.9 KM', cost:'₹850', resp:'6 min', open:true, disc:'Usually offers 20% discount', emo:'🥗', bgc:'#123a2c'},
+  {name:'Kabab Junction', type:'nonveg', cuisine:'Mughlai · BBQ', rating:4.3, dist:'0.9 KM', cost:'₹1,400', resp:'8 min', open:true, disc:'Usually offers 15–18% discount', emo:'🍗', bgc:'#3a1f2a'},
+  {name:'Dragon Wok', type:'both', cuisine:'Chinese · Seafood', rating:4.5, dist:'2.4 KM', cost:'₹1,300', resp:'7 min', open:true, disc:'Usually offers 12–18% discount', emo:'🥡', bgc:'#1f2c3a'},
+];
+
+const restGrid = document.getElementById('restGrid');
+const selectedRests = new Set();
+
+function matchesFilter(r){
+  if(!state.foodType) return true;
+  if(state.foodType==='veg') return r.type==='veg' || r.type==='pureveg' || r.type==='both';
+  if(state.foodType==='nonveg') return r.type==='nonveg' || r.type==='both';
+  if(state.foodType==='both') return true;
+  if(state.foodType==='jain') return r.type==='jain';
+  if(state.foodType==='pureveg') return r.type==='pureveg';
+  if(state.foodType==='vegan') return r.type==='vegan' || r.type==='pureveg';
+  if(state.foodType==='glutenfree') return true;
+  return true;
+}
+function tagFor(type){
+  if(type==='nonveg') return {c:'nonveg', l:'Non-Veg'};
+  if(type==='both') return {c:'both', l:'Veg & Non-Veg'};
+  return {c:'veg', l:type==='jain'?'Jain':type==='vegan'?'Vegan':'Pure Veg'};
+}
+
+function buildRestaurants(){
+  const list = restaurantData.filter(matchesFilter);
+  restGrid.innerHTML = (list.length?list:restaurantData).map((r,i)=>{
+    const t = tagFor(r.type);
+    return `<div class="rest-card reveal in" style="transition-delay:${i*60}ms">
+      <div class="rest-media" style="background:${r.bgc};">
+        <span class="tag ${t.c}">${t.l}</span>
+        <span class="status ${r.open?'open':'closed'}">${r.open?'Open now':'Closed'}</span>
+        ${r.emo}
+      </div>
+      <div class="rest-body">
+        <div class="rest-top"><h4>${r.name}</h4><div class="rest-rating">★ ${r.rating}</div></div>
+        <div class="rest-meta">
+          <span>📍 ${r.dist}</span><span>🍴 ${r.cuisine}</span><span>⏱ ${r.resp} response</span>
+        </div>
+        <div class="rest-discount">🏷 ${r.disc}</div>
+        <div class="rest-foot">
+          <div class="cost">${r.cost}<span>cost for two</span></div>
+          <button class="select-btn" data-name="${r.name}">Select</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  restGrid.querySelectorAll('.select-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      const n = btn.dataset.name;
+      if(selectedRests.has(n)){ selectedRests.delete(n); btn.classList.remove('sel'); btn.textContent='Select'; }
+      else{ selectedRests.add(n); btn.classList.add('sel'); btn.textContent='Selected ✓'; }
+      document.getElementById('selCount').textContent = selectedRests.size;
+    };
+  });
+}
+buildRestaurants();
+
+document.getElementById('sendReqBtn').onclick = ()=>{
+  const btn = document.getElementById('sendReqBtn');
+  const n = selectedRests.size;
+  btn.textContent = n>0 ? `Request sent to ${n} restaurant${n>1?'s':''} ✓` : 'Select at least one restaurant';
+  setTimeout(()=>{ btn.textContent = 'Send Request →'; }, 2400);
+};
+
+/* ================= DISH MARQUEE ================= */
+const dishes = [
+  {e:'🍛', n:'Biryani', c:'Hyderabadi'}, {e:'🍕', n:'Pizza', c:'Italian'}, {e:'🍣', n:'Sushi', c:'Japanese'},
+  {e:'🍜', n:'Ramen', c:'Asian'}, {e:'🥘', n:'Paneer Tikka', c:'North Indian'}, {e:'🍖', n:'BBQ Platter', c:'Grill'},
+  {e:'🌮', n:'Street Tacos', c:'Mexican'}, {e:'🍤', n:'Seafood', c:'Coastal'}, {e:'🥗', n:'Vegan Bowl', c:'Plant-based'},
+  {e:'🍰', n:'Desserts', c:'Patisserie'}, {e:'☕', n:'Cafe Fare', c:'All-day'}, {e:'🍲', n:'Jain Thali', c:'Satvik'}
+];
+const dishTrack = document.getElementById('dishTrack');
+const dishHtml = dishes.map(d=>`<div class="dish-card"><div class="emo">${d.e}</div><h5>${d.n}</h5><span>${d.c}</span></div>`).join('');
+dishTrack.innerHTML = dishHtml + dishHtml;
+
+/* ================= NOTIFICATION OFFER BUTTONS ================= */
+const offers = ['10%','12%','15%','20%','25%','30%','Custom'];
+const offerGrid = document.getElementById('offerGrid');
+offerGrid.innerHTML = offers.map(o=>`<div class="offer-btn">${o}</div>`).join('');
+offerGrid.querySelectorAll('.offer-btn').forEach(b=>{
+  b.onclick = ()=>{ offerGrid.querySelectorAll('.offer-btn').forEach(x=>x.classList.remove('pick')); b.classList.add('pick'); };
+});
+
+/* ================= SMART MATCHING DEMO ================= */
+const matchTypes = [
+  {k:'veg', l:'🟢 Veg Only', n:186},
+  {k:'nonveg', l:'🔴 Non-Veg Only', n:142},
+  {k:'both', l:'🟡 Veg & Non-Veg', n:248},
+  {k:'jain', l:'🟠 Jain Food', n:34},
+  {k:'pureveg', l:'💠 Pure Veg Only', n:97},
+  {k:'vegan', l:'🌱 Vegan', n:52},
+];
+const matchChips = document.getElementById('matchChips');
+matchChips.innerHTML = matchTypes.map(m=>`<button class="chip" data-m="${m.k}" data-n="${m.n}">${m.l}</button>`).join('');
+const matchCount = document.getElementById('matchCount');
+const matchBars = document.getElementById('matchBars');
+matchBars.innerHTML = Array.from({length:24}).map(()=>'<div class="match-bar"></div>').join('');
+
+function setMatch(n){
+  matchCount.textContent = n;
+  const bars = matchBars.querySelectorAll('.match-bar');
+  const on = Math.round((n/248)*bars.length);
+  bars.forEach((b,i)=> b.classList.toggle('on', i<on));
+}
+matchChips.querySelectorAll('.chip').forEach(c=>{
+  c.onclick = ()=>{
+    matchChips.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel');
+    setMatch(c.dataset.n);
+  };
+});
+setMatch(248);
+</script>
+</body>
+</html>
