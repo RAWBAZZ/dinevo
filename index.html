@@ -121,7 +121,7 @@ nav{
 .hero{
   min-height:100svh; position:relative; z-index:2;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center; padding:140px 24px 80px;
+  text-align:center; padding:140px 24px 150px;
   overflow:hidden;
 }
 .hero-rays{
@@ -177,7 +177,7 @@ nav{
 
 /* stat strip */
 .stat-strip{
-  display:flex; justify-content:center; gap:64px; margin-top:64px; flex-wrap:wrap;
+  display:flex; justify-content:center; gap:64px; margin-top:64px; margin-bottom:24px; flex-wrap:wrap;
   padding-top:40px; border-top:1px solid var(--line); width:100%; max-width:780px;
 }
 .stat-strip .stat{ text-align:center; }
@@ -413,6 +413,34 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 
 @media(prefers-reduced-motion: reduce){
   *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+
+/* ===================== COMPACT MOBILE WIZARD ===================== */
+@media(max-width:480px){
+  .hero{ padding-bottom:120px; }
+  .hero-scroll{ bottom:24px; }
+  .hero-scroll .line{ height:26px; }
+  section{ padding:70px 0; }
+  .section-head{ margin-bottom:36px; }
+  .section-head h2{ font-size:26px; }
+  .wizard-card{ padding:26px 18px; border-radius:18px; }
+  .progress-dots{ margin-bottom:22px; gap:4px; }
+  .progress-dots span{ width:16px; height:3px; }
+  .progress-dots span.active{ width:22px; }
+  .step-label h3{ font-size:19px; margin-top:6px; }
+  .step-label p{ font-size:12.5px; }
+  .step-body{ margin-top:22px; min-height:0; }
+  .option-grid{ grid-template-columns:repeat(3,1fr); gap:8px; }
+  .opt{ padding:12px 6px; border-radius:10px; }
+  .opt .ic{ font-size:19px; margin-bottom:5px; }
+  .opt .lbl{ font-size:10.5px; line-height:1.25; }
+  .chip{ padding:8px 13px; font-size:12px; }
+  .bill-grid{ grid-template-columns:repeat(3,1fr); gap:8px; }
+  .bill-opt{ padding:12px 6px; font-size:13px; }
+  .counter-row{ padding:13px 14px; margin-bottom:10px; }
+  .datetime-row{ margin-bottom:14px; }
+  .wizard-nav{ margin-top:28px; }
+  .wnav-btn{ padding:11px 20px; font-size:11px; }
 }
 </style>
 </head>
