@@ -132,10 +132,11 @@ nav{
 @keyframes rotateRays{ to{ transform:rotate(360deg); } }
 
 .hero-logo-wrap{ width:220px; height:220px; margin-bottom:6px; position:relative; }
-.hero-logo-wrap img{
+.hero-logo-wrap video{
   width:100%; height:100%; object-fit:contain; border-radius:20px;
   animation:logoFloat 5s ease-in-out infinite;
   filter:drop-shadow(0 10px 40px rgba(201,162,39,.35));
+  background:var(--bg);
 }
 @keyframes logoFloat{ 0%,100%{ transform:translateY(0); filter:drop-shadow(0 10px 40px rgba(201,162,39,.35)); } 50%{ transform:translateY(-10px); filter:drop-shadow(0 20px 55px rgba(201,162,39,.55)); } }
 
@@ -196,25 +197,43 @@ section{ position:relative; z-index:2; padding:130px 0; }
 
 /* ===================== FLOW TIMELINE ===================== */
 .flow{ background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-.flow-wrap{ position:relative; max-width:560px; margin:0 auto; }
-.flow-line{
-  position:absolute; left:23px; top:8px; bottom:8px; width:2px; background:var(--line);
+.flow-scroll{
+  overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity; padding:36px 24px 26px; margin:0 -24px;
+  scrollbar-width:thin; scrollbar-color:var(--gold-dim) transparent;
 }
+.flow-scroll::-webkit-scrollbar{ height:5px; }
+.flow-scroll::-webkit-scrollbar-track{ background:var(--line); border-radius:3px; }
+.flow-scroll::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:3px; }
+.flow-track{ display:flex; position:relative; min-width:max-content; padding:0 40px; }
+.flow-line-bg{ position:absolute; top:28px; left:40px; right:40px; height:2px; background:var(--line); }
 .flow-line-fill{
-  position:absolute; left:0; top:0; width:100%; height:0%; background:linear-gradient(var(--gold-hi), var(--gold-dim));
-  transition:height 1.2s var(--ease); box-shadow:0 0 12px var(--gold);
+  position:absolute; top:28px; left:40px; width:0%; height:2px;
+  background:linear-gradient(90deg, var(--gold-hi), var(--gold-dim));
+  box-shadow:0 0 12px var(--gold); transition:width .5s var(--ease);
 }
-.flow-step{ position:relative; padding:0 0 46px 68px; }
-.flow-step:last-child{ padding-bottom:0; }
+.flow-step{ position:relative; width:208px; flex:0 0 auto; text-align:center; padding:0 18px; scroll-snap-align:start; }
 .flow-node{
-  position:absolute; left:0; top:-2px; width:48px; height:48px; border-radius:50%;
+  position:relative; z-index:2; width:56px; height:56px; border-radius:50%; margin:0 auto 20px;
   border:1px solid var(--line); background:var(--surface);
-  display:flex; align-items:center; justify-content:center; font-size:18px;
+  display:flex; align-items:center; justify-content:center; font-size:20px;
   transition:border-color .5s, box-shadow .5s, background .5s;
 }
 .flow-step.on .flow-node{ border-color:var(--gold); box-shadow:0 0 22px rgba(201,162,39,.5); background:var(--surface-2); }
-.flow-step h4{ font-family:'Michroma'; font-size:14px; letter-spacing:.04em; color:var(--text); }
-.flow-step p{ color:var(--text-faint); font-size:13.5px; margin-top:6px; }
+.flow-step .num{ font-family:'JetBrains Mono'; font-size:10.5px; color:var(--gold); letter-spacing:.15em; display:block; margin-bottom:8px; }
+.flow-step h4{ font-family:'Michroma'; font-size:13px; letter-spacing:.03em; color:var(--text); line-height:1.35; }
+.flow-step p{ color:var(--text-faint); font-size:12.5px; margin-top:8px; line-height:1.55; }
+.flow-hint{
+  text-align:center; margin-top:8px; font-family:'JetBrains Mono'; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-faint); display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.flow-hint::before, .flow-hint::after{ content:'—'; color:var(--gold-dim); }
+@media(max-width:480px){
+  .flow-step{ width:172px; padding:0 12px; }
+  .flow-node{ width:48px; height:48px; font-size:17px; }
+  .flow-step h4{ font-size:12px; }
+  .flow-step p{ font-size:11.5px; }
+}
 
 /* ===================== WIZARD ===================== */
 .wizard{ }
@@ -473,7 +492,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 <header class="hero">
   <div class="hero-rays"></div>
   <div class="hero-logo-wrap" id="heroLogo">
-    <img src="logo.png" alt="Dinevo logo">
+    <video src="logo-video.mp4" poster="logo.png" autoplay muted loop playsinline webkit-playsinline></video>
   </div>
   <div class="eyebrow" style="justify-content:center;margin-top:8px;">RESERVATIONS, REIMAGINED</div>
   <h1>The Future of<br><span class="accent">Restaurant Bookings</span></h1>
@@ -499,17 +518,21 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
       <h2>From request to review</h2>
       <p>Eight quiet steps stand between "I'm hungry" and a table with a discount already in hand.</p>
     </div>
-    <div class="flow-wrap">
-      <div class="flow-line"><div class="flow-line-fill" id="flowFill"></div></div>
-      <div class="flow-step" data-i="0"><div class="flow-node">📤</div><h4>Quote sent</h4><p>Your request reaches every matching restaurant nearby.</p></div>
-      <div class="flow-step" data-i="1"><div class="flow-node">💬</div><h4>Restaurant responds</h4><p>An offer arrives — a discount, plus optional perks.</p></div>
-      <div class="flow-step" data-i="2"><div class="flow-node">✅</div><h4>You accept</h4><p>Pick the best offer among your shortlisted restaurants.</p></div>
-      <div class="flow-step" data-i="3"><div class="flow-node">🔒</div><h4>Pay 2% token</h4><p>A small token secures your table — fully adjusted later.</p></div>
-      <div class="flow-step" data-i="4"><div class="flow-node">📅</div><h4>Booking confirmed</h4><p>Your slot is locked. No calls, no waiting at the door.</p></div>
-      <div class="flow-step" data-i="5"><div class="flow-node">🍽️</div><h4>Visit the restaurant</h4><p>Arrive, be seated, enjoy the discount already agreed.</p></div>
-      <div class="flow-step" data-i="6"><div class="flow-node">🧾</div><h4>Token adjusted</h4><p>Your token is deducted straight from the final bill.</p></div>
-      <div class="flow-step" data-i="7"><div class="flow-node">⭐</div><h4>Review &amp; rating</h4><p>Rate the visit — it shapes offers for the next diner.</p></div>
+    <div class="flow-scroll reveal" id="flowScroll">
+      <div class="flow-track">
+        <div class="flow-line-bg"></div>
+        <div class="flow-line-fill" id="flowFill"></div>
+        <div class="flow-step" data-i="0"><div class="flow-node">📤</div><span class="num">STEP 01</span><h4>Quote sent</h4><p>Your request reaches every matching restaurant nearby.</p></div>
+        <div class="flow-step" data-i="1"><div class="flow-node">💬</div><span class="num">STEP 02</span><h4>Restaurant responds</h4><p>An offer arrives — a discount, plus optional perks.</p></div>
+        <div class="flow-step" data-i="2"><div class="flow-node">✅</div><span class="num">STEP 03</span><h4>You accept</h4><p>Pick the best offer among your shortlisted restaurants.</p></div>
+        <div class="flow-step" data-i="3"><div class="flow-node">🔒</div><span class="num">STEP 04</span><h4>Pay 2% token</h4><p>A small token secures your table — fully adjusted later.</p></div>
+        <div class="flow-step" data-i="4"><div class="flow-node">📅</div><span class="num">STEP 05</span><h4>Booking confirmed</h4><p>Your slot is locked. No calls, no waiting at the door.</p></div>
+        <div class="flow-step" data-i="5"><div class="flow-node">🍽️</div><span class="num">STEP 06</span><h4>Visit the restaurant</h4><p>Arrive, be seated, enjoy the discount already agreed.</p></div>
+        <div class="flow-step" data-i="6"><div class="flow-node">🧾</div><span class="num">STEP 07</span><h4>Token adjusted</h4><p>Your token is deducted straight from the final bill.</p></div>
+        <div class="flow-step" data-i="7"><div class="flow-node">⭐</div><span class="num">STEP 08</span><h4>Review &amp; rating</h4><p>Rate the visit — it shapes offers for the next diner.</p></div>
+      </div>
     </div>
+    <div class="flow-hint">Swipe to explore</div>
   </div>
 </section>
 
@@ -653,20 +676,20 @@ window.addEventListener('load', ()=>{
 /* ================= FLOW TIMELINE FILL ================= */
 const flowSteps = document.querySelectorAll('.flow-step');
 const flowFill = document.getElementById('flowFill');
+const flowScroll = document.getElementById('flowScroll');
 function updateFlow(){
-  const wrap = document.querySelector('.flow-wrap');
-  if(!wrap) return;
-  const rect = wrap.getBoundingClientRect();
-  const vh = window.innerHeight;
-  let progress = (vh*0.8 - rect.top) / rect.height;
-  progress = Math.max(0, Math.min(1, progress));
-  flowFill.style.height = (progress*100)+'%';
+  if(!flowScroll) return;
+  const max = flowScroll.scrollWidth - flowScroll.clientWidth;
+  const progress = max > 0 ? flowScroll.scrollLeft / max : 0;
+  flowFill.style.width = (progress*100)+'%';
   flowSteps.forEach((s,i)=>{
-    if(progress > i/flowSteps.length + 0.02) s.classList.add('on'); else s.classList.remove('on');
+    if(progress > i/(flowSteps.length-1) - 0.06) s.classList.add('on'); else s.classList.remove('on');
   });
 }
-window.addEventListener('scroll', updateFlow);
-updateFlow();
+if(flowScroll){
+  flowScroll.addEventListener('scroll', updateFlow, {passive:true});
+  updateFlow();
+}
 
 /* ================= WIZARD ================= */
 const state = {
@@ -833,9 +856,9 @@ renderStep();
 
 /* ================= RESTAURANT LIST ================= */
 const restaurantData = [
-  {name:'Deepak jee sweets', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712'},
-  {name:'Ganesh Mistan bhandar', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f'},
-  {name:'Sibu sah Samosa wale', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f'},
+  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712'},
+  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f'},
+  {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f'},
   {name:'Bombay Bistro', type:'both', cuisine:'Street Food · Fast Food', rating:4.4, dist:'1.6 KM', cost:'₹700', resp:'5 min', open:true, disc:'Usually offers 15–20% discount', emo:'🌮', bgc:'#3a3212'},
   {name:'Jain Bhoj', type:'jain', cuisine:'North Indian · Jain', rating:4.8, dist:'2.6 KM', cost:'₹1,100', resp:'7 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍲', bgc:'#2b3a12'},
   {name:'Osteria Nera', type:'both', cuisine:'Italian · Cafe', rating:4.5, dist:'3.4 KM', cost:'₹2,800', resp:'11 min', open:false, disc:'Usually offers 15% discount', emo:'🍝', bgc:'#231f3a'},
