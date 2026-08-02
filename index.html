@@ -1071,8 +1071,13 @@ function readOffers(){
 function writeOffers(list){
   localStorage.setItem('dinevoOffers', JSON.stringify(list));
 }
+let _offersSig = null;
 function renderOffers(){
-  const offers = readOffers().sort((a,b)=> b.ts - a.ts);
+  const offersRaw = readOffers();
+  const sig = JSON.stringify(offersRaw);
+  if(sig === _offersSig) return;
+  _offersSig = sig;
+  const offers = offersRaw.sort((a,b)=> b.ts - a.ts);
   const list = document.getElementById('offersList');
   if(offers.length === 0){
     list.innerHTML = `<div class="empty-state" style="text-align:center; padding:40px 20px; color:var(--text-faint);">

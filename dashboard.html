@@ -257,12 +257,14 @@ function syncRealRequests(){
   const stored = readStoredRequests();
   const restName = currentRestaurantName();
   const mine = stored.filter(r => r.restaurant === restName);
+  let changed = false;
   mine.forEach(r=>{
     if(!sampleRequests.find(x=>x.id===r.id)){
       sampleRequests.unshift({...r, real:true});
+      changed = true;
     }
   });
-  renderRequests();
+  if(changed) renderRequests();
 }
 
 function renderRequests(){
@@ -359,8 +361,12 @@ function removeRequest(id){
   }
   renderRequests();
 }
+let _sentOffersSig = null;
 function syncSentOffers(){
   const stored = readStoredOffers().filter(o => o.restaurant === currentRestaurantName());
+  const sig = JSON.stringify(stored);
+  if(sig === _sentOffersSig) return;
+  _sentOffersSig = sig;
   sentOffers.length = 0;
   sentOffers.push(...stored);
   renderSent();
