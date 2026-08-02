@@ -878,6 +878,11 @@ function wireStep(){
       custom.style.display = el.dataset.bill==='Custom' ? 'block' : 'none';
     };
   });
+  const customBillEl = document.getElementById('customBill');
+  if(customBillEl){
+    customBillEl.value = state.customBillValue || '';
+    customBillEl.oninput = (e)=> state.customBillValue = e.target.value;
+  }
   bodyEl.querySelectorAll('.counter button').forEach(btn=>{
     btn.onclick = ()=>{
       const key = btn.dataset.c, d = parseInt(btn.dataset.d);
@@ -969,10 +974,47 @@ function buildRestaurants(){
 }
 buildRestaurants();
 
+const foodLabels = { veg:'Veg Only', nonveg:'Non-Veg Only', both:'Veg & Non-Veg', jain:'Jain Food', pureveg:'Pure Veg Only', vegan:'Vegan', glutenfree:'Gluten-Free' };
+const mealLabels = { breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner', latenight:'Late Night' };
+function formatTime(t){
+  if(!t) return '';
+  const [h,m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+function pushRequestsToStorage(){
+  let existing = [];
+  try{ existing = JSON.parse(localStorage.getItem('dinevoRequests') || '[]'); }catch(e){ existing = []; }
+  const guestParts = [`${state.adults} Adult${state.adults>1?'s':''}`];
+  if(state.kids > 0) guestParts.push(`${state.kids} Kid${state.kids>1?'s':''}`);
+  const billVal = state.bill === 'Custom' ? (state.customBillValue ? `₹${state.customBillValue}` : 'Custom amount') : (state.bill || 'Not specified');
+  selectedRests.forEach(name=>{
+    const r = restaurantData.find(x=>x.name===name);
+    existing.push({
+      id: Date.now() + Math.random().toString(16).slice(2),
+      restaurant: name,
+      guests: guestParts.join(' + '),
+      meal: `${mealLabels[state.meal] || 'Dinner'} · ${formatTime(state.time) || '8:30 PM'}`,
+      dist: r ? r.dist : '—',
+      bill: billVal,
+      pref: foodLabels[state.foodType] || 'No preference specified',
+      cuisine: state.cuisines.length ? state.cuisines.join(', ') : 'Any cuisine',
+      ts: Date.now()
+    });
+  });
+  localStorage.setItem('dinevoRequests', JSON.stringify(existing));
+}
+
 document.getElementById('sendReqBtn').onclick = ()=>{
   const btn = document.getElementById('sendReqBtn');
   const n = selectedRests.size;
-  btn.textContent = n>0 ? `Request sent to ${n} restaurant${n>1?'s':''} ✓` : 'Select at least one restaurant';
+  if(n > 0){
+    pushRequestsToStorage();
+    btn.textContent = `Request sent to ${n} restaurant${n>1?'s':''} ✓`;
+  } else {
+    btn.textContent = 'Select at least one restaurant';
+  }
   setTimeout(()=>{ btn.textContent = 'Send Request →'; }, 2400);
 };
 

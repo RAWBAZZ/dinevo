@@ -148,7 +148,7 @@ footer.dash-foot a{ color:var(--gold-hi); }
 
 <div class="wrap">
   <div class="banner">
-    ⚠ Demo mode — these requests are simulated locally in your browser. To receive real requests from customers on your live Dinevo site, this dashboard needs to be connected to a shared backend/database.
+    ✅ Connected to your Dinevo customer app — when you submit the booking wizard on this same device/browser, real requests appear below tagged <b>LIVE</b>. Note: this works because both apps share this browser's storage — for real customers on other phones to reach real restaurants, you'll eventually need a backend/database (happy to help set that up next).
   </div>
 
   <div class="rest-select">
@@ -160,6 +160,15 @@ footer.dash-foot a{ color:var(--gold-hi); }
       <option>Copper & Clove</option>
       <option>Saffron Leaf</option>
       <option>The Ember House</option>
+      <option>Bombay Bistro</option>
+      <option>Jain Bhoj</option>
+      <option>Osteria Nera</option>
+      <option>Green Bowl Vegan</option>
+      <option>Kabab Junction</option>
+      <option>Dragon Wok</option>
+      <option>Sushi Ko</option>
+      <option>Punjab Da Dhaba</option>
+      <option>Cafe Latte House</option>
     </select>
   </div>
 
@@ -226,14 +235,34 @@ onlineSwitch.onclick = ()=>{
 const autoSwitch = document.getElementById('autoSwitch');
 autoSwitch.onclick = ()=> autoSwitch.classList.toggle('on');
 
-/* ---- mock incoming requests ---- */
+/* ---- requests: real (from customer app) + demo filler ---- */
 const sampleRequests = [
-  {id:1, guests:'4 Adults + 2 Kids', meal:'Dinner · 8:30 PM', dist:'1.6 KM', bill:'₹2,500', pref:'Veg & Non-Veg', cuisine:'North Indian'},
-  {id:2, guests:'2 Adults', meal:'Lunch · 1:15 PM', dist:'0.9 KM', bill:'₹1,000', pref:'Pure Veg', cuisine:'South Indian'},
-  {id:3, guests:'6 Adults', meal:'Dinner · 9:00 PM', dist:'2.3 KM', bill:'₹5,000', pref:'Non-Veg Only', cuisine:'BBQ'},
+  {id:'m1', guests:'4 Adults + 2 Kids', meal:'Dinner · 8:30 PM', dist:'1.6 KM', bill:'₹2,500', pref:'Veg & Non-Veg', cuisine:'North Indian', real:false},
+  {id:'m2', guests:'2 Adults', meal:'Lunch · 1:15 PM', dist:'0.9 KM', bill:'₹1,000', pref:'Pure Veg', cuisine:'South Indian', real:false},
 ];
 const addons = ['🍰 Free dessert','🥗 Free starter','🧒 Kids meal free','🍹 Mocktail','💺 Priority seating','🎂 Birthday decoration'];
 let acceptedCount = 0, totalGiven = [];
+
+function currentRestaurantName(){
+  return document.getElementById('restPicker').value;
+}
+function readStoredRequests(){
+  try{ return JSON.parse(localStorage.getItem('dinevoRequests') || '[]'); }catch(e){ return []; }
+}
+function writeStoredRequests(list){
+  localStorage.setItem('dinevoRequests', JSON.stringify(list));
+}
+function syncRealRequests(){
+  const stored = readStoredRequests();
+  const restName = currentRestaurantName();
+  const mine = stored.filter(r => r.restaurant === restName);
+  mine.forEach(r=>{
+    if(!sampleRequests.find(x=>x.id===r.id)){
+      sampleRequests.unshift({...r, real:true});
+    }
+  });
+  renderRequests();
+}
 
 function renderRequests(){
   const panel = document.getElementById('panel-requests');
@@ -247,7 +276,7 @@ function renderRequests(){
 
   panel.innerHTML = sampleRequests.map(r => `
     <div class="req-card" data-id="${r.id}">
-      <div class="req-top"><h4>New Dining Request</h4><span class="dist mono">${r.dist}</span></div>
+      <div class="req-top"><h4>New Dining Request ${r.real ? '<span class=\"mono\" style=\"font-size:9px;color:var(--veg);border:1px solid var(--veg);padding:2px 7px;border-radius:100px;margin-left:8px;vertical-align:middle;\">LIVE</span>' : ''}</h4><span class="dist mono">${r.dist}</span></div>
       <div class="req-grid">
         <div class="item"><label>Guests</label><b>${r.guests}</b></div>
         <div class="item"><label>Meal</label><b>${r.meal}</b></div>
@@ -276,7 +305,7 @@ function renderRequests(){
   `).join('');
 
   panel.querySelectorAll('.req-card').forEach(card=>{
-    const id = +card.dataset.id;
+    const id = card.dataset.id;
     card.querySelectorAll('.offer-btn').forEach(b=>{
       b.onclick = ()=>{ card.querySelectorAll('.offer-btn').forEach(x=>x.classList.remove('pick')); b.classList.add('pick'); };
     });
@@ -306,7 +335,11 @@ function moveToSent(id, discount, status){
 }
 function removeRequest(id){
   const idx = sampleRequests.findIndex(r=>r.id===id);
+  const req = sampleRequests[idx];
   if(idx>-1) sampleRequests.splice(idx,1);
+  if(req && req.real){
+    writeStoredRequests(readStoredRequests().filter(r=>r.id!==id));
+  }
   renderRequests();
 }
 function renderSent(){
@@ -333,20 +366,27 @@ function updateStats(){
   document.getElementById('statRequests').textContent = sampleRequests.length + sentOffers.length;
 }
 
+syncRealRequests();
 renderRequests();
 renderSent();
 updateStats();
 
+/* pick up new requests the moment the customer sends them (same device, other tab) */
+window.addEventListener('storage', (e)=>{ if(e.key === 'dinevoRequests') syncRealRequests(); });
+window.addEventListener('focus', syncRealRequests);
+setInterval(syncRealRequests, 4000);
+document.getElementById('restPicker').addEventListener('change', syncRealRequests);
+
 /* simulate a new incoming request every so often, for demo feel */
-let nextId = 4;
+let nextId = 1;
 const demoPool = [
   {guests:'3 Adults', meal:'Dinner · 7:45 PM', dist:'1.1 KM', bill:'₹1,800', pref:'Veg Only', cuisine:'Italian'},
   {guests:'5 Adults + 1 Kid', meal:'Late Night · 11:00 PM', dist:'2.0 KM', bill:'₹3,200', pref:'Non-Veg Only', cuisine:'Chinese'},
 ];
 setInterval(()=>{
-  if(sampleRequests.length < 4 && Math.random() > 0.4){
+  if(sampleRequests.filter(r=>!r.real).length < 3 && Math.random() > 0.4){
     const pick = demoPool[Math.floor(Math.random()*demoPool.length)];
-    sampleRequests.push({id:nextId++, ...pick});
+    sampleRequests.push({id:'d'+(nextId++), ...pick, real:false});
     renderRequests();
   }
 }, 14000);
