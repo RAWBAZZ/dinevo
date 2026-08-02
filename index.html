@@ -448,6 +448,38 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .notif-copy li{ display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; color:var(--text-dim); }
 .notif-copy li b{ color:var(--gold-hi); font-family:'JetBrains Mono'; font-size:12px; min-width:26px; }
 
+/* ===================== OFFERS (customer inbox) ===================== */
+.offer-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:16px;
+  animation:slideUp .5s var(--ease);
+}
+@keyframes slideUp{ from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+.offer-card .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.offer-card h4{ font-size:15px; }
+.offer-card .disc-badge{ font-family:'JetBrains Mono'; font-size:22px; color:var(--gold-hi); white-space:nowrap; }
+.offer-card p.meta{ font-size:12.5px; color:var(--text-faint); margin-top:6px; }
+.offer-card .addons-row{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+.offer-card .addons-row span{ font-size:10.5px; padding:5px 10px; border-radius:100px; background:rgba(255,255,255,.04); color:var(--text-dim); }
+.offer-actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+.offer-actions .btn-accept{ flex:1; min-width:140px; padding:13px; border-radius:100px; background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi)); color:#0b0904; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; transition:transform .3s; }
+.offer-actions .btn-accept:hover{ transform:translateY(-2px); }
+.offer-actions .btn-bargain{ padding:13px 20px; border-radius:100px; border:1px solid var(--gold-dim); color:var(--gold-hi); font-size:12.5px; }
+.offer-actions .btn-decline-o{ padding:13px 18px; border-radius:100px; border:1px solid var(--line); color:var(--text-faint); font-size:12.5px; }
+.bargain-panel{ margin-top:14px; padding:14px; border-radius:12px; background:var(--bg-soft); border:1px solid var(--line); display:none; }
+.bargain-panel.show{ display:block; }
+.bargain-panel label{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; }
+.bargain-chips{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.bargain-chips .chip{ padding:8px 14px; font-size:12px; }
+.bargain-panel .send-counter{ margin-top:12px; width:100%; padding:11px; border-radius:100px; background:var(--gold); color:#0b0904; font-weight:700; font-size:12px; text-transform:uppercase; }
+.offer-note{ margin-top:12px; padding:10px 12px; border-radius:10px; font-size:12px; }
+.offer-note.wait{ background:rgba(201,162,39,.08); border:1px dashed var(--gold-dim); color:var(--gold-hi); }
+.offer-note.win{ background:rgba(76,154,91,.1); border:1px dashed var(--veg); color:#8fd39c; }
+.offer-note.lose{ background:rgba(255,255,255,.03); border:1px dashed var(--line); color:var(--text-dim); }
+.confirmed-card{ text-align:center; padding:14px 6px; }
+.confirmed-card .tick{ font-size:34px; margin-bottom:10px; }
+.confirmed-card h4{ font-size:16px; color:var(--gold-hi); }
+.confirmed-card p{ font-size:12.5px; color:var(--text-dim); margin-top:8px; }
+
 /* ===================== SMART MATCHING ===================== */
 .match-demo{
   background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:40px; margin-top:50px;
@@ -521,6 +553,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <a href="#flow">How it works</a>
     <a href="#book">Book a table</a>
     <a href="#restaurants">Restaurants</a>
+    <a href="#offers">Offers</a>
     <a href="#dishes">Cuisine</a>
     <a href="#matching">Smart matching</a>
     <a href="dashboard.html">For Restaurants</a>
@@ -615,6 +648,18 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
       <div class="count">Selected: <b id="selCount">0</b> restaurants</div>
       <button class="btn-primary" id="sendReqBtn" style="padding:14px 30px;">Send Request →</button>
     </div>
+  </div>
+</section>
+
+<!-- OFFERS -->
+<section id="offers" style="background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Your inbox</div>
+      <h2>Offers for you</h2>
+      <p>When a restaurant responds to your request, it shows up here — accept, negotiate, or decline.</p>
+    </div>
+    <div id="offersList" style="max-width:640px; margin:0 auto;"></div>
   </div>
 </section>
 
@@ -1012,11 +1057,114 @@ document.getElementById('sendReqBtn').onclick = ()=>{
   if(n > 0){
     pushRequestsToStorage();
     btn.textContent = `Request sent to ${n} restaurant${n>1?'s':''} ✓`;
+    setTimeout(()=>{ document.getElementById('offers').scrollIntoView({behavior:'smooth'}); }, 900);
   } else {
     btn.textContent = 'Select at least one restaurant';
   }
   setTimeout(()=>{ btn.textContent = 'Send Request →'; }, 2400);
 };
+
+/* ================= OFFERS INBOX (customer side) ================= */
+function readOffers(){
+  try{ return JSON.parse(localStorage.getItem('dinevoOffers') || '[]'); }catch(e){ return []; }
+}
+function writeOffers(list){
+  localStorage.setItem('dinevoOffers', JSON.stringify(list));
+}
+function renderOffers(){
+  const offers = readOffers().sort((a,b)=> b.ts - a.ts);
+  const list = document.getElementById('offersList');
+  if(offers.length === 0){
+    list.innerHTML = `<div class="empty-state" style="text-align:center; padding:40px 20px; color:var(--text-faint);">
+      <div style="font-size:34px; margin-bottom:12px;">📭</div>
+      <p style="font-size:13px;">No offers yet — send a request above and check back once a restaurant responds.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = offers.map(o => {
+    if(o.status === 'confirmed'){
+      return `<div class="offer-card"><div class="confirmed-card">
+        <div class="tick">✅</div>
+        <h4>Booking confirmed at ${o.restaurant}</h4>
+        <p>${o.guests} · ${o.meal} · ${o.discount} off · 2% token paid</p>
+      </div></div>`;
+    }
+    if(o.status === 'declined'){
+      return `<div class="offer-card" style="opacity:.5;"><div class="top"><h4>${o.restaurant}</h4><div class="disc-badge" style="color:var(--text-faint);">${o.discount}</div></div><p class="meta">You declined this offer.</p></div>`;
+    }
+    const counter = o.counter;
+    let note = '';
+    if(counter && counter.status==='pending') note = `<div class="offer-note wait">Waiting on ${o.restaurant} to respond to your counter of ${counter.percent}…</div>`;
+    else if(counter && counter.status==='accepted') note = `<div class="offer-note win">🎉 ${o.restaurant} agreed to ${counter.percent}! Accept below to confirm.</div>`;
+    else if(counter && counter.status==='rejected') note = `<div class="offer-note lose">${o.restaurant} kept their original offer of ${o.discount}.</div>`;
+    const counterLocked = counter && counter.status === 'pending';
+    return `<div class="offer-card" data-id="${o.id}">
+      <div class="top"><h4>${o.restaurant}</h4><div class="disc-badge">${o.discount} off</div></div>
+      <p class="meta">${o.guests} · ${o.meal} · ${o.cuisine} · Bill ~${o.bill}</p>
+      ${o.addons && o.addons.length ? `<div class="addons-row">${o.addons.map(a=>`<span>${a}</span>`).join('')}</div>` : ''}
+      ${note}
+      <div class="offer-actions">
+        <button class="btn-accept" data-act="accept" ${counterLocked?'disabled style="opacity:.4;"':''}>🔒 Accept & Pay 2% Token</button>
+        <button class="btn-bargain" data-act="bargain" ${counterLocked?'disabled style="opacity:.4;"':''}>🤝 Bargain</button>
+        <button class="btn-decline-o" data-act="decline">Decline</button>
+      </div>
+      <div class="bargain-panel" id="bargain-${o.id}">
+        <label>Ask for a better discount</label>
+        <div class="bargain-chips">
+          ${[5,10,15].map(add => `<div class="chip bargain-chip" data-val="${(parseInt(o.discount)||15)+add}%">${(parseInt(o.discount)||15)+add}%</div>`).join('')}
+          <input type="text" class="bargain-custom" placeholder="Custom %" style="width:90px; background:var(--bg); border:1px solid var(--line); border-radius:100px; padding:8px 14px; color:var(--text); font-size:12px;">
+        </div>
+        <button class="send-counter">Send Counter Offer</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.offer-card').forEach(card=>{
+    const id = card.dataset.id;
+    if(!id) return;
+    const acceptBtn = card.querySelector('[data-act="accept"]');
+    const bargainBtn = card.querySelector('[data-act="bargain"]');
+    const declineBtn = card.querySelector('[data-act="decline"]');
+    if(acceptBtn) acceptBtn.onclick = ()=> updateOfferStatus(id, 'confirmed');
+    if(declineBtn) declineBtn.onclick = ()=> updateOfferStatus(id, 'declined');
+    if(bargainBtn) bargainBtn.onclick = ()=>{
+      document.getElementById('bargain-'+id).classList.toggle('show');
+    };
+    const panel = card.querySelector('.bargain-panel');
+    if(panel){
+      let chosen = null;
+      panel.querySelectorAll('.bargain-chip').forEach(c=>{
+        c.onclick = ()=>{ panel.querySelectorAll('.bargain-chip').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); chosen = c.dataset.val; };
+      });
+      const customInput = panel.querySelector('.bargain-custom');
+      customInput.oninput = ()=>{ panel.querySelectorAll('.bargain-chip').forEach(x=>x.classList.remove('sel')); chosen = customInput.value ? customInput.value.replace('%','')+'%' : null; };
+      panel.querySelector('.send-counter').onclick = ()=>{
+        if(!chosen) return;
+        sendCounterOffer(id, chosen);
+      };
+    }
+  });
+}
+function updateOfferStatus(id, status){
+  const offers = readOffers();
+  const o = offers.find(x=>x.id===id);
+  if(!o) return;
+  o.status = status;
+  writeOffers(offers);
+  renderOffers();
+}
+function sendCounterOffer(id, percent){
+  const offers = readOffers();
+  const o = offers.find(x=>x.id===id);
+  if(!o) return;
+  o.counter = { percent, status:'pending' };
+  writeOffers(offers);
+  renderOffers();
+}
+renderOffers();
+window.addEventListener('storage', (e)=>{ if(e.key === 'dinevoOffers') renderOffers(); });
+window.addEventListener('focus', renderOffers);
+setInterval(renderOffers, 4000);
 
 /* ================= DISH MARQUEE ================= */
 const dishes = [
