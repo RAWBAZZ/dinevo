@@ -183,6 +183,8 @@ footer.dash-foot a{ color:var(--gold-hi); }
   <div class="tabs">
     <div class="tab active" data-tab="requests">Incoming <span class="badge" id="reqBadge">0</span></div>
     <div class="tab" data-tab="sent">Sent Offers</div>
+    <div class="tab" data-tab="waitlist">Waitlist</div>
+    <div class="tab" data-tab="reviews">Reviews</div>
     <div class="tab" data-tab="analytics">Analytics</div>
     <div class="tab" data-tab="settings">Settings</div>
   </div>
@@ -190,6 +192,35 @@ footer.dash-foot a{ color:var(--gold-hi); }
   <div class="panel active" id="panel-requests"></div>
 
   <div class="panel" id="panel-sent"></div>
+
+  <div class="panel" id="panel-waitlist">
+    <div class="chart-box">
+      <h4>Live table status</h4>
+      <p style="font-size:12px; color:var(--text-faint); margin-top:6px;">This is what diners see live on your restaurant's profile page.</p>
+      <div class="setting-row" style="display:block;">
+        <div style="margin-bottom:8px;">Current wait time (minutes)</div>
+        <div class="counter" style="display:flex; justify-content:flex-start; align-items:center; gap:18px;">
+          <button id="waitMinus" style="width:38px;height:38px;border-radius:50%;border:1px solid var(--line);color:var(--gold-hi);font-size:18px;">−</button>
+          <span class="mono" id="waitMinutesVal" style="font-size:20px; min-width:40px; text-align:center;">0</span>
+          <button id="waitPlus" style="width:38px;height:38px;border-radius:50%;border:1px solid var(--line);color:var(--gold-hi);font-size:18px;">+</button>
+        </div>
+      </div>
+      <div class="setting-row" style="display:block;">
+        <div style="margin-bottom:8px;">Tables available right now</div>
+        <div class="counter" style="display:flex; justify-content:flex-start; align-items:center; gap:18px;">
+          <button id="tablesMinus" style="width:38px;height:38px;border-radius:50%;border:1px solid var(--line);color:var(--gold-hi);font-size:18px;">−</button>
+          <span class="mono" id="tablesVal" style="font-size:20px; min-width:40px; text-align:center;">4</span>
+          <button id="tablesPlus" style="width:38px;height:38px;border-radius:50%;border:1px solid var(--line);color:var(--gold-hi);font-size:18px;">+</button>
+        </div>
+      </div>
+      <button class="btn-send" id="updateStatusBtn" style="width:100%; margin-top:16px;">Update Live Status</button>
+      <div id="statusSaved" style="text-align:center; font-size:11.5px; color:var(--veg); margin-top:10px; display:none;">✓ Updated — diners will see this instantly</div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-reviews">
+    <div class="chart-box" id="reviewsBox">Loading reviews…</div>
+  </div>
 
   <div class="panel" id="panel-analytics">
     <div class="chart-box">
@@ -215,6 +246,7 @@ footer.dash-foot a{ color:var(--gold-hi); }
     Connected diner-facing app: <a href="index.html">dinevo-tan.vercel.app</a>
   </footer>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
@@ -457,7 +489,62 @@ try{
 }catch(e){ console.error('Realtime subscribe failed:', e); }
 window.addEventListener('focus', ()=>{ syncRealRequests(); syncSentOffers(); });
 setInterval(()=>{ syncRealRequests(); syncSentOffers(); }, 6000);
-document.getElementById('restPicker').addEventListener('change', ()=>{ _sentOffersSig = null; syncRealRequests(); syncSentOffers(); });
+document.getElementById('restPicker').addEventListener('change', ()=>{ _sentOffersSig = null; syncRealRequests(); syncSentOffers(); loadWaitStatus(); loadDashReviews(); });
+
+/* ================= LIVE WAITLIST ================= */
+let waitMinutes = 0, tablesAvail = 4;
+async function loadWaitStatus(){
+  try{
+    const { data, error } = await sb.from('restaurant_status').select('*').eq('restaurant', currentRestaurantName()).maybeSingle();
+    if(error){ console.error('Supabase read error (restaurant_status):', error); return; }
+    waitMinutes = data ? (data.wait_minutes || 0) : 0;
+    tablesAvail = data ? (data.tables_available ?? 4) : 4;
+    document.getElementById('waitMinutesVal').textContent = waitMinutes;
+    document.getElementById('tablesVal').textContent = tablesAvail;
+  }catch(e){ console.error('Network error loading status:', e); }
+}
+document.getElementById('waitMinus').onclick = ()=>{ waitMinutes = Math.max(0, waitMinutes-5); document.getElementById('waitMinutesVal').textContent = waitMinutes; };
+document.getElementById('waitPlus').onclick = ()=>{ waitMinutes += 5; document.getElementById('waitMinutesVal').textContent = waitMinutes; };
+document.getElementById('tablesMinus').onclick = ()=>{ tablesAvail = Math.max(0, tablesAvail-1); document.getElementById('tablesVal').textContent = tablesAvail; };
+document.getElementById('tablesPlus').onclick = ()=>{ tablesAvail += 1; document.getElementById('tablesVal').textContent = tablesAvail; };
+document.getElementById('updateStatusBtn').onclick = async ()=>{
+  try{
+    const { error } = await sb.from('restaurant_status').upsert({ restaurant: currentRestaurantName(), wait_minutes: waitMinutes, tables_available: tablesAvail, updated_at: Date.now() });
+    if(error){ alert('Could not update status: ' + error.message); return; }
+    const saved = document.getElementById('statusSaved');
+    saved.style.display = 'block';
+    setTimeout(()=> saved.style.display = 'none', 2500);
+  }catch(e){ alert('Network error updating status.'); }
+};
+loadWaitStatus();
+
+/* ================= REVIEWS (dashboard view) ================= */
+async function loadDashReviews(){
+  const box = document.getElementById('reviewsBox');
+  box.innerHTML = 'Loading reviews…';
+  try{
+    const { data, error } = await sb.from('reviews').select('*').eq('restaurant', currentRestaurantName()).order('ts', {ascending:false});
+    if(error){ box.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Could not load reviews.</p>'; return; }
+    const reviews = data || [];
+    if(reviews.length === 0){
+      box.innerHTML = '<h4>Reviews</h4><p style="color:var(--text-faint); font-size:12.5px; margin-top:10px;">No reviews yet for this restaurant.</p>';
+      return;
+    }
+    const avg = (reviews.reduce((a,b)=>a+b.rating,0) / reviews.length).toFixed(1);
+    box.innerHTML = `<h4>Reviews · ${avg}★ average (${reviews.length})</h4>` + reviews.map(rv=>`
+      <div class="setting-row" style="display:block;">
+        <div style="display:flex; justify-content:space-between;"><b style="font-size:13px;">${rv.name}</b><span class="mono" style="color:var(--gold-hi); font-size:12px;">${'★'.repeat(rv.rating)}</span></div>
+        <div class="sub" style="margin-top:6px;">${rv.comment}</div>
+      </div>
+    `).join('');
+  }catch(e){ box.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Network error loading reviews.</p>'; }
+}
+loadDashReviews();
+try{
+  sb.channel('reviews-live-dash')
+    .on('postgres_changes', { event:'*', schema:'public', table:'reviews' }, loadDashReviews)
+    .subscribe();
+}catch(e){ console.error('Realtime subscribe failed:', e); }
 
 
 

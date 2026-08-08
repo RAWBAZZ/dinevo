@@ -372,7 +372,7 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .rest-mini:hover{ transform:translateY(-6px); border-color:var(--gold-dim); box-shadow:0 20px 40px -18px rgba(0,0,0,.6); }
 .rest-mini-media{ height:88px; position:relative; display:flex; align-items:center; justify-content:center; font-size:32px; }
 .rest-mini-media .status-dot{
-  position:absolute; top:9px; right:9px; width:9px; height:9px; border-radius:50%;
+  position:absolute; bottom:8px; right:8px; width:9px; height:9px; border-radius:50%;
   background:#4c9a5b; box-shadow:0 0 8px rgba(76,154,91,.8);
 }
 .rest-mini-media .status-dot.closed{ background:#7a7a7a; box-shadow:none; }
@@ -447,6 +447,90 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .notif-copy ul{ list-style:none; margin-top:20px; }
 .notif-copy li{ display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; color:var(--text-dim); }
 .notif-copy li b{ color:var(--gold-hi); font-family:'JetBrains Mono'; font-size:12px; min-width:26px; }
+
+/* ===================== FAVORITES HEART ===================== */
+.fav-heart{
+  position:absolute; top:9px; right:9px; z-index:3; width:30px; height:30px; border-radius:50%;
+  background:rgba(8,7,5,.55); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center;
+  font-size:15px; transition:all .25s var(--ease); border:1px solid rgba(255,255,255,.1);
+}
+.fav-heart.on{ background:rgba(180,72,62,.3); border-color:var(--nonveg); }
+.fav-heart:active{ transform:scale(1.15); }
+
+/* ===================== WAITLIST BADGE ===================== */
+.wait-badge{
+  display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-family:'JetBrains Mono';
+  padding:5px 10px; border-radius:100px; margin-top:6px;
+}
+.wait-badge.low{ background:rgba(76,154,91,.18); color:#8fd39c; }
+.wait-badge.med{ background:rgba(217,138,52,.18); color:#f0b876; }
+.wait-badge.high{ background:rgba(180,72,62,.18); color:#e6968c; }
+.wait-dot{ width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulseTimer 1.6s ease-in-out infinite; }
+
+/* ===================== RESTAURANT PROFILE OVERLAY ===================== */
+.profile-overlay{
+  position:fixed; inset:0; z-index:500; background:rgba(4,3,2,.7); backdrop-filter:blur(4px);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.profile-overlay.show{ display:flex; }
+.profile-sheet{
+  width:100%; max-width:640px; max-height:92vh; overflow-y:auto; background:var(--bg);
+  border-radius:26px 26px 0 0; border:1px solid var(--line); border-bottom:none;
+  animation:sheetUp .4s var(--ease);
+}
+@keyframes sheetUp{ from{ transform:translateY(60px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+.profile-hero{ height:170px; position:relative; display:flex; align-items:center; justify-content:center; font-size:56px; }
+.profile-hero .close-btn{
+  position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%;
+  background:rgba(8,7,5,.6); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.profile-body{ padding:24px 24px 40px; }
+.profile-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.profile-head h2{ font-size:22px; font-family:'Manrope'; font-weight:800; }
+.profile-head .rating{ font-family:'JetBrains Mono'; color:var(--gold-hi); font-size:15px; white-space:nowrap; }
+.profile-meta{ color:var(--text-faint); font-size:12.5px; margin-top:6px; }
+.profile-tabs{ display:flex; gap:24px; margin-top:22px; border-bottom:1px solid var(--line); }
+.ptab{ padding:10px 0; font-size:12.5px; color:var(--text-faint); position:relative; }
+.ptab.active{ color:var(--gold-hi); }
+.ptab.active::after{ content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--gold); }
+.ppanel{ display:none; margin-top:20px; }
+.ppanel.active{ display:block; }
+.gallery-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+.gallery-row .gph{ flex:0 0 80px; height:80px; border-radius:14px; background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:30px; border:1px solid var(--line); }
+.menu-item{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
+.menu-item:last-child{ border-bottom:none; }
+.menu-item .n{ display:flex; align-items:center; gap:8px; font-size:13.5px; }
+.menu-item .vdot{ width:9px; height:9px; border-radius:2px; border:1.5px solid; display:inline-block; }
+.menu-item .vdot.v{ border-color:var(--veg); } .menu-item .vdot.v::after{ content:''; display:block; width:4px; height:4px; border-radius:50%; background:var(--veg); margin:1.2px auto; }
+.menu-item .vdot.nv{ border-color:var(--nonveg); } .menu-item .vdot.nv::after{ content:''; display:block; width:4px; height:4px; border-radius:50%; background:var(--nonveg); margin:1.2px auto; }
+.menu-item .p{ font-family:'JetBrains Mono'; color:var(--gold-hi); font-size:13px; }
+.rating-summary{ display:flex; align-items:center; gap:16px; padding:16px; border:1px solid var(--line); border-radius:14px; margin-bottom:18px; }
+.rating-summary .big{ font-family:'JetBrains Mono'; font-size:32px; color:var(--gold-hi); }
+.rating-summary .sub{ font-size:11px; color:var(--text-faint); }
+.review-card{ padding:14px 0; border-bottom:1px solid var(--line); }
+.review-card:last-child{ border-bottom:none; }
+.review-card .rtop{ display:flex; justify-content:space-between; align-items:center; }
+.review-card .rname{ font-size:13px; font-weight:700; }
+.review-card .rstars{ color:var(--gold-hi); font-size:12px; font-family:'JetBrains Mono'; }
+.review-card p{ font-size:12.5px; color:var(--text-dim); margin-top:6px; line-height:1.6; }
+.review-form{ margin-top:20px; padding:16px; border:1px solid var(--line); border-radius:14px; }
+.review-form label{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; }
+.star-pick{ display:flex; gap:6px; margin:10px 0 14px; font-size:22px; }
+.star-pick span{ cursor:pointer; opacity:.3; transition:opacity .2s; }
+.star-pick span.on{ opacity:1; }
+.review-form textarea{ width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:12px; color:var(--text); font-family:'Manrope'; font-size:13px; resize:vertical; min-height:70px; }
+.review-form button{ margin-top:12px; width:100%; padding:12px; border-radius:100px; background:var(--gold); color:#0b0904; font-weight:700; font-size:12.5px; text-transform:uppercase; }
+
+/* ===================== EVENTS SECTION ===================== */
+.event-card{
+  flex:0 0 260px; scroll-snap-align:start; background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:22px; transition:transform .4s var(--ease), border-color .4s;
+}
+.event-card:hover{ transform:translateY(-6px); border-color:var(--gold-dim); }
+.event-card .tag{ font-family:'JetBrains Mono'; font-size:10px; color:var(--gold-hi); text-transform:uppercase; letter-spacing:.08em; }
+.event-card h4{ font-size:16px; margin-top:10px; }
+.event-card .rest{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
+.event-card p{ font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.6; }
 
 /* ===================== OFFERS (customer inbox) ===================== */
 .offer-card{
@@ -554,6 +638,8 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <a href="#book">Book a table</a>
     <a href="#restaurants">Restaurants</a>
     <a href="#offers">Offers</a>
+    <a href="#favorites">Favorites</a>
+    <a href="#events">Events</a>
     <a href="#dishes">Cuisine</a>
     <a href="#matching">Smart matching</a>
     <a href="dashboard.html">For Restaurants</a>
@@ -662,6 +748,37 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <div id="offersList" style="max-width:640px; margin:0 auto;"></div>
   </div>
 </section>
+
+<!-- FAVORITES -->
+<section id="favorites">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Saved for later</div>
+      <h2>Your favorites</h2>
+      <p>Tap the ♥ on any restaurant to save it here for next time.</p>
+    </div>
+    <div class="rest-scroll-row reveal" id="favRow"></div>
+  </div>
+</section>
+
+<!-- EVENTS -->
+<section id="events" style="background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" style="justify-content:center">Don't miss out</div>
+      <h2>Events &amp; special occasions</h2>
+      <p>Signature nights, tasting menus, and recurring specials from our partner restaurants.</p>
+    </div>
+  </div>
+  <div class="dish-marquee reveal" style="-webkit-mask-image:none; mask-image:none;">
+    <div style="display:flex; gap:20px; overflow-x:auto; scroll-snap-type:x proximity; padding:8px 24px 20px;" id="eventsRow"></div>
+  </div>
+</section>
+
+<!-- RESTAURANT PROFILE OVERLAY -->
+<div class="profile-overlay" id="profileOverlay">
+  <div class="profile-sheet" id="profileSheet"></div>
+</div>
 
 <!-- DISHES -->
 <section id="dishes">
@@ -951,18 +1068,42 @@ renderStep();
 
 /* ================= RESTAURANT LIST ================= */
 const restaurantData = [
-  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712'},
-  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f'},
-  {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f'},
-  {name:'Bombay Bistro', type:'both', cuisine:'Street Food · Fast Food', rating:4.4, dist:'1.6 KM', cost:'₹700', resp:'5 min', open:true, disc:'Usually offers 15–20% discount', emo:'🌮', bgc:'#3a3212'},
-  {name:'Jain Bhoj', type:'jain', cuisine:'North Indian · Jain', rating:4.8, dist:'2.6 KM', cost:'₹1,100', resp:'7 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍲', bgc:'#2b3a12'},
-  {name:'Osteria Nera', type:'both', cuisine:'Italian · Cafe', rating:4.5, dist:'3.4 KM', cost:'₹2,800', resp:'11 min', open:false, disc:'Usually offers 15% discount', emo:'🍝', bgc:'#231f3a'},
-  {name:'Green Bowl Vegan', type:'vegan', cuisine:'Multi Cuisine · Vegan', rating:4.6, dist:'1.9 KM', cost:'₹850', resp:'6 min', open:true, disc:'Usually offers 20% discount', emo:'🥗', bgc:'#123a2c'},
-  {name:'Kabab Junction', type:'nonveg', cuisine:'Mughlai · BBQ', rating:4.3, dist:'0.9 KM', cost:'₹1,400', resp:'8 min', open:true, disc:'Usually offers 15–18% discount', emo:'🍗', bgc:'#3a1f2a'},
-  {name:'Dragon Wok', type:'both', cuisine:'Chinese · Seafood', rating:4.5, dist:'2.4 KM', cost:'₹1,300', resp:'7 min', open:true, disc:'Usually offers 12–18% discount', emo:'🥡', bgc:'#1f2c3a'},
-  {name:'Sushi Ko', type:'nonveg', cuisine:'Japanese · Seafood', rating:4.8, dist:'3.1 KM', cost:'₹2,600', resp:'10 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍣', bgc:'#1f2a3a'},
-  {name:'Punjab Da Dhaba', type:'both', cuisine:'North Indian · Punjabi', rating:4.6, dist:'1.4 KM', cost:'₹950', resp:'5 min', open:true, disc:'Usually offers 18% discount', emo:'🫓', bgc:'#3a2a14'},
-  {name:'Cafe Latte House', type:'pureveg', cuisine:'Cafe · Desserts', rating:4.4, dist:'0.6 KM', cost:'₹600', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'☕', bgc:'#2a1f18'},
+  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712',
+    photos:['🍢','🥘','🍛','🕯️'], menu:[{n:'Galouti Kebab',p:'₹520',v:false},{n:'Dal Makhani',p:'₹340',v:true},{n:'Butter Chicken',p:'₹560',v:false},{n:'Paneer Lababdar',p:'₹380',v:true},{n:'Mughlai Biryani',p:'₹480',v:false},{n:'Rumali Roti',p:'₹60',v:true}],
+    event:{title:'Kebab & Candlelight Night', tag:'Every Friday', desc:'Live grill counter, unlimited kebabs, soft acoustic sets.'}},
+  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f',
+    photos:['🥘','🍛','🥗','🍚'], menu:[{n:'Mysore Masala Dosa',p:'₹180',v:true},{n:'Hyderabadi Veg Biryani',p:'₹260',v:true},{n:'Rava Idli',p:'₹140',v:true},{n:'Filter Coffee',p:'₹60',v:true},{n:'Bisi Bele Bath',p:'₹200',v:true}],
+    event:{title:'Sunday Thali Special', tag:'Weekends', desc:'Unlimited traditional thali with 12 rotating dishes.'}},
+  {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f',
+    photos:['🍖','🔥','🥩','🍷'], menu:[{n:'Smoked Ribs',p:'₹720',v:false},{n:'Grilled Salmon',p:'₹840',v:false},{n:'Charred Corn Salad',p:'₹280',v:true},{n:'Whiskey Glazed Wings',p:'₹460',v:false},{n:'Mash & Gravy',p:'₹220',v:true}],
+    event:{title:'Fire Pit Fridays', tag:'Every Friday', desc:'Open-flame grill theatre with a build-your-own platter bar.'}},
+  {name:'Bombay Bistro', type:'both', cuisine:'Street Food · Fast Food', rating:4.4, dist:'1.6 KM', cost:'₹700', resp:'5 min', open:true, disc:'Usually offers 15–20% discount', emo:'🌮', bgc:'#3a3212',
+    photos:['🌮','🥙','🍟','🥤'], menu:[{n:'Vada Pav',p:'₹60',v:true},{n:'Pav Bhaji',p:'₹160',v:true},{n:'Chicken Frankie',p:'₹190',v:false},{n:'Bombay Sandwich',p:'₹130',v:true},{n:'Masala Fries',p:'₹150',v:true}],
+    event:{title:'Retro Bombay Nights', tag:'Monthly', desc:'90s Bollywood playlist, street-cart pop-ups, and chaat counters.'}},
+  {name:'Jain Bhoj', type:'jain', cuisine:'North Indian · Jain', rating:4.8, dist:'2.6 KM', cost:'₹1,100', resp:'7 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍲', bgc:'#2b3a12',
+    photos:['🍲','🥗','🍚','🫓'], menu:[{n:'Jain Dal Fry',p:'₹220',v:true},{n:'Lauki Kofta',p:'₹280',v:true},{n:'Jeera Rice',p:'₹160',v:true},{n:'Jain Thali',p:'₹420',v:true},{n:'Kaju Curry',p:'₹340',v:true}],
+    event:{title:'Satvik Thali Evenings', tag:'Daily 7–10 PM', desc:'No onion, no garlic — a full traditional satvik spread.'}},
+  {name:'Osteria Nera', type:'both', cuisine:'Italian · Cafe', rating:4.5, dist:'3.4 KM', cost:'₹2,800', resp:'11 min', open:false, disc:'Usually offers 15% discount', emo:'🍝', bgc:'#231f3a',
+    photos:['🍝','🍕','🍷','🧀'], menu:[{n:'Truffle Risotto',p:'₹680',v:true},{n:'Margherita Pizza',p:'₹520',v:true},{n:'Osso Buco',p:'₹920',v:false},{n:'Tiramisu',p:'₹340',v:true},{n:'Burrata Salad',p:'₹460',v:true}],
+    event:{title:'Wine & Pasta Pairing', tag:'First Saturday', desc:'Five-course tasting menu paired with Italian wines.'}},
+  {name:'Green Bowl Vegan', type:'vegan', cuisine:'Multi Cuisine · Vegan', rating:4.6, dist:'1.9 KM', cost:'₹850', resp:'6 min', open:true, disc:'Usually offers 20% discount', emo:'🥗', bgc:'#123a2c',
+    photos:['🥗','🥑','🍜','🫘'], menu:[{n:'Buddha Bowl',p:'₹320',v:true},{n:'Vegan Ramen',p:'₹360',v:true},{n:'Jackfruit Tacos',p:'₹290',v:true},{n:'Almond Milk Latte',p:'₹150',v:true},{n:'Chickpea Curry',p:'₹260',v:true}],
+    event:{title:'Plant-Based Brunch Club', tag:'Sundays 10–2', desc:'All-vegan brunch spread with cold-pressed juices.'}},
+  {name:'Kabab Junction', type:'nonveg', cuisine:'Mughlai · BBQ', rating:4.3, dist:'0.9 KM', cost:'₹1,400', resp:'8 min', open:true, disc:'Usually offers 15–18% discount', emo:'🍗', bgc:'#3a1f2a',
+    photos:['🍗','🍢','🌶️','🫓'], menu:[{n:'Seekh Kebab',p:'₹340',v:false},{n:'Chicken Tikka',p:'₹380',v:false},{n:'Mutton Boti',p:'₹460',v:false},{n:'Garlic Naan',p:'₹70',v:true},{n:'Firni',p:'₹120',v:true}],
+    event:{title:'Late Night Grill', tag:'Till 1 AM', desc:'Post-midnight kebab counter for the night owls.'}},
+  {name:'Dragon Wok', type:'both', cuisine:'Chinese · Seafood', rating:4.5, dist:'2.4 KM', cost:'₹1,300', resp:'7 min', open:true, disc:'Usually offers 12–18% discount', emo:'🥡', bgc:'#1f2c3a',
+    photos:['🥡','🍜','🦐','🥢'], menu:[{n:'Kung Pao Chicken',p:'₹380',v:false},{n:'Veg Hakka Noodles',p:'₹260',v:true},{n:'Prawn Dumplings',p:'₹420',v:false},{n:'Sichuan Tofu',p:'₹300',v:true},{n:'Chilli Garlic Fish',p:'₹460',v:false}],
+    event:{title:'Dim Sum Sunday', tag:'Weekends', desc:'Unlimited steamed dim sum baskets, made fresh table-side.'}},
+  {name:'Sushi Ko', type:'nonveg', cuisine:'Japanese · Seafood', rating:4.8, dist:'3.1 KM', cost:'₹2,600', resp:'10 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍣', bgc:'#1f2a3a',
+    photos:['🍣','🍱','🍵','🥢'], menu:[{n:'Salmon Nigiri (6pc)',p:'₹520',v:false},{n:'Dragon Roll',p:'₹640',v:false},{n:'Miso Soup',p:'₹180',v:true},{n:'Vegetable Tempura',p:'₹340',v:true},{n:'Matcha Ice Cream',p:'₹220',v:true}],
+    event:{title:'Omakase Evenings', tag:'By reservation', desc:'Chef\'s tasting counter — 8 courses, seasonal picks.'}},
+  {name:'Punjab Da Dhaba', type:'both', cuisine:'North Indian · Punjabi', rating:4.6, dist:'1.4 KM', cost:'₹950', resp:'5 min', open:true, disc:'Usually offers 18% discount', emo:'🫓', bgc:'#3a2a14',
+    photos:['🫓','🧈','🥛','🌾'], menu:[{n:'Sarson Da Saag',p:'₹280',v:true},{n:'Amritsari Fish',p:'₹460',v:false},{n:'Butter Naan',p:'₹65',v:true},{n:'Lassi',p:'₹110',v:true},{n:'Chole Bhature',p:'₹220',v:true}],
+    event:{title:'Dhaba Dawaat', tag:'Every Thursday', desc:'Roadside-style dhaba spread with live tandoor.'}},
+  {name:'Cafe Latte House', type:'pureveg', cuisine:'Cafe · Desserts', rating:4.4, dist:'0.6 KM', cost:'₹600', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'☕', bgc:'#2a1f18',
+    photos:['☕','🍰','🥐','🍪'], menu:[{n:'Flat White',p:'₹160',v:true},{n:'Red Velvet Slice',p:'₹220',v:true},{n:'Almond Croissant',p:'₹150',v:true},{n:'Cold Brew',p:'₹180',v:true},{n:'Cheesecake',p:'₹240',v:true}],
+    event:{title:'Study & Sip Hours', tag:'Weekdays 3–7 PM', desc:'Quiet corner, free wifi, bottomless filter coffee refills.'}},
 ];
 
 const selectedRests = new Set();
@@ -978,6 +1119,46 @@ function matchesFilter(r){
   if(state.foodType==='glutenfree') return true;
   return true;
 }
+let favorites = new Set();
+try{ favorites = new Set(JSON.parse(localStorage.getItem('dinevoFavorites') || '[]')); }catch(e){ favorites = new Set(); }
+function saveFavorites(){ localStorage.setItem('dinevoFavorites', JSON.stringify([...favorites])); }
+function toggleFavorite(name){
+  if(favorites.has(name)) favorites.delete(name); else favorites.add(name);
+  saveFavorites();
+  buildRestaurants();
+  renderFavorites();
+}
+function renderFavorites(){
+  const row = document.getElementById('favRow');
+  const favList = restaurantData.filter(r=>favorites.has(r.name));
+  if(favList.length === 0){
+    row.innerHTML = `<div style="padding:30px 10px; color:var(--text-faint); font-size:13px; text-align:center; width:100%;">No favorites yet — tap the ♥ on any restaurant card to save it here.</div>`;
+    return;
+  }
+  row.innerHTML = favList.map((r,i)=>miniCard(r,i)).join('');
+  wireCardButtons(row);
+}
+
+let statusMap = {};
+async function loadStatuses(){
+  try{
+    const { data, error } = await sb.from('restaurant_status').select('*');
+    if(error){ console.error('Supabase read error (restaurant_status):', error); return; }
+    statusMap = {};
+    (data || []).forEach(s=> statusMap[s.restaurant] = s);
+    buildRestaurants();
+    renderFavorites();
+  }catch(e){ console.error('Network error loading status:', e); }
+}
+function waitBadge(name){
+  const s = statusMap[name];
+  if(!s) return '';
+  const mins = s.wait_minutes || 0;
+  const level = mins <= 5 ? 'low' : mins <= 15 ? 'med' : 'high';
+  const label = mins === 0 ? 'No wait — table ready' : `${mins} min wait`;
+  return `<div class="wait-badge ${level}"><span class="wait-dot"></span>${label} · ${s.tables_available ?? '—'} tables free</div>`;
+}
+
 function tagFor(type){
   if(type==='nonveg') return {c:'nonveg', l:'Non-Veg'};
   if(type==='both') return {c:'both', l:'Veg & Non-Veg'};
@@ -986,15 +1167,18 @@ function tagFor(type){
 
 function miniCard(r, i){
   const t = tagFor(r.type);
-  return `<div class="rest-mini reveal in" style="transition-delay:${i*40}ms">
+  const isFav = favorites.has(r.name);
+  return `<div class="rest-mini reveal in" style="transition-delay:${i*40}ms" data-open="${r.name}">
     <div class="rest-mini-media" style="background:${r.bgc};">
       <span class="tag-mini ${t.c==='veg'?'veg':t.c==='nonveg'?'nonveg':'both'}" style="background:${t.c==='veg'?'rgba(76,154,91,.25)':t.c==='nonveg'?'rgba(180,72,62,.25)':'rgba(217,138,52,.25)'}; color:${t.c==='veg'?'#8fd39c':t.c==='nonveg'?'#e6968c':'#f0b876'};">${t.l}</span>
+      <button class="fav-heart ${isFav?'on':''}" data-fav="${r.name}">${isFav?'♥':'♡'}</button>
       <span class="status-dot ${r.open?'':'closed'}"></span>
       ${r.emo}
     </div>
     <div class="rest-mini-body">
       <div class="rest-mini-top"><h5>${r.name}</h5><div class="rest-mini-rating">★${r.rating}</div></div>
       <div class="rest-mini-meta">📍 ${r.dist} · ${r.cuisine.split(' · ')[0]}</div>
+      ${waitBadge(r.name)}
       <div class="rest-mini-disc">🏷 ${r.disc.replace('Usually offers ','')}</div>
       <div class="rest-mini-foot">
         <div class="cost">${r.cost}</div>
@@ -1002,6 +1186,24 @@ function miniCard(r, i){
       </div>
     </div>
   </div>`;
+}
+
+function wireCardButtons(scope){
+  scope.querySelectorAll('.select-btn-sm').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+      const n = btn.dataset.name;
+      if(selectedRests.has(n)){ selectedRests.delete(n); btn.classList.remove('sel'); btn.textContent='Select'; }
+      else{ selectedRests.add(n); btn.classList.add('sel'); btn.textContent='✓ Added'; }
+      document.getElementById('selCount').textContent = selectedRests.size;
+    };
+  });
+  scope.querySelectorAll('.fav-heart').forEach(btn=>{
+    btn.onclick = (e)=>{ e.stopPropagation(); toggleFavorite(btn.dataset.fav); };
+  });
+  scope.querySelectorAll('[data-open]').forEach(card=>{
+    card.onclick = ()=> openProfile(card.dataset.open);
+  });
 }
 
 function buildRestaurants(){
@@ -1012,16 +1214,129 @@ function buildRestaurants(){
   const row2 = list.slice(mid);
   document.getElementById('restRow1').innerHTML = row1.map((r,i)=>miniCard(r,i)).join('');
   document.getElementById('restRow2').innerHTML = row2.map((r,i)=>miniCard(r,i)).join('');
-  document.querySelectorAll('.select-btn-sm').forEach(btn=>{
-    btn.onclick = ()=>{
-      const n = btn.dataset.name;
-      if(selectedRests.has(n)){ selectedRests.delete(n); btn.classList.remove('sel'); btn.textContent='Select'; }
-      else{ selectedRests.add(n); btn.classList.add('sel'); btn.textContent='✓ Added'; }
-      document.getElementById('selCount').textContent = selectedRests.size;
-    };
-  });
+  wireCardButtons(document.getElementById('restRow1'));
+  wireCardButtons(document.getElementById('restRow2'));
 }
 buildRestaurants();
+renderFavorites();
+loadStatuses();
+setInterval(loadStatuses, 15000);
+try{
+  sb.channel('status-live-customer')
+    .on('postgres_changes', { event:'*', schema:'public', table:'restaurant_status' }, loadStatuses)
+    .subscribe();
+}catch(e){ console.error('Realtime subscribe failed:', e); }
+
+/* ---- Events section ---- */
+function renderEvents(){
+  const row = document.getElementById('eventsRow');
+  const withEvents = restaurantData.filter(r=>r.event);
+  row.innerHTML = withEvents.map(r=>`
+    <div class="event-card" data-open="${r.name}" style="cursor:pointer;">
+      <div class="tag">${r.event.tag}</div>
+      <h4>${r.event.title}</h4>
+      <div class="rest">${r.emo} ${r.name}</div>
+      <p>${r.event.desc}</p>
+    </div>
+  `).join('');
+  row.querySelectorAll('[data-open]').forEach(card=>{
+    card.onclick = ()=> openProfile(card.dataset.open);
+  });
+}
+renderEvents();
+
+/* ---- Restaurant profile overlay ---- */
+async function openProfile(name){
+  const r = restaurantData.find(x=>x.name===name);
+  if(!r) return;
+  const t = tagFor(r.type);
+  const overlay = document.getElementById('profileOverlay');
+  const sheet = document.getElementById('profileSheet');
+  sheet.innerHTML = `
+    <div class="profile-hero" style="background:${r.bgc};">
+      <button class="close-btn" id="profileClose">✕</button>
+      ${r.emo}
+    </div>
+    <div class="profile-body">
+      <div class="profile-head">
+        <div><h2>${r.name}</h2><div class="profile-meta">${r.cuisine} · ${t.l} · ${r.dist}</div></div>
+        <div class="rating">★ ${r.rating}</div>
+      </div>
+      ${waitBadge(r.name)}
+      <div class="profile-tabs">
+        <div class="ptab active" data-ptab="menu">Menu</div>
+        <div class="ptab" data-ptab="photos">Photos</div>
+        <div class="ptab" data-ptab="reviews">Reviews</div>
+      </div>
+      <div class="ppanel active" id="ppanel-menu">
+        ${r.menu.map(m=>`<div class="menu-item"><span class="n"><span class="vdot ${m.v?'v':'nv'}"></span>${m.n}</span><span class="p">${m.p}</span></div>`).join('')}
+      </div>
+      <div class="ppanel" id="ppanel-photos">
+        <div class="gallery-row">${r.photos.map(p=>`<div class="gph">${p}</div>`).join('')}</div>
+      </div>
+      <div class="ppanel" id="ppanel-reviews">
+        <div id="reviewsContent">Loading reviews…</div>
+        <div class="review-form">
+          <label>Your name</label>
+          <input type="text" id="reviewName" placeholder="e.g. Aditi" style="width:100%; margin-top:8px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px; color:var(--text); font-size:13px;">
+          <label style="display:block; margin-top:14px;">Your rating</label>
+          <div class="star-pick" id="starPick">${[1,2,3,4,5].map(n=>`<span data-star="${n}">★</span>`).join('')}</div>
+          <label>Your review</label>
+          <textarea id="reviewText" placeholder="How was your visit?" style="margin-top:8px;"></textarea>
+          <button id="submitReview">Post Review</button>
+        </div>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('show');
+  document.getElementById('profileClose').onclick = ()=> overlay.classList.remove('show');
+  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.classList.remove('show'); };
+  sheet.querySelectorAll('.ptab').forEach(tab=>{
+    tab.onclick = ()=>{
+      sheet.querySelectorAll('.ptab').forEach(x=>x.classList.remove('active'));
+      sheet.querySelectorAll('.ppanel').forEach(x=>x.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('ppanel-'+tab.dataset.ptab).classList.add('active');
+    };
+  });
+  let picked = 0;
+  const starEls = sheet.querySelectorAll('#starPick span');
+  starEls.forEach(s=>{
+    s.onclick = ()=>{ picked = +s.dataset.star; starEls.forEach(x=> x.classList.toggle('on', +x.dataset.star <= picked)); };
+  });
+  document.getElementById('submitReview').onclick = async ()=>{
+    const name = document.getElementById('reviewName').value.trim() || 'Anonymous Diner';
+    const text = document.getElementById('reviewText').value.trim();
+    if(picked === 0 || !text){ alert('Please add a star rating and a short review.'); return; }
+    try{
+      const { error } = await sb.from('reviews').insert([{ id:'rev_'+Date.now()+'_'+Math.random().toString(16).slice(2), restaurant:r.name, name, rating:picked, comment:text, ts:Date.now() }]);
+      if(error){ alert('Could not post review: ' + error.message); return; }
+    }catch(e){ alert('Network error posting review.'); return; }
+    document.getElementById('reviewText').value = '';
+    document.getElementById('reviewName').value = '';
+    picked = 0; starEls.forEach(x=>x.classList.remove('on'));
+    loadReviews(r.name);
+  };
+  loadReviews(r.name);
+}
+async function loadReviews(name){
+  const el = document.getElementById('reviewsContent');
+  if(!el) return;
+  try{
+    const { data, error } = await sb.from('reviews').select('*').eq('restaurant', name).order('ts', {ascending:false});
+    if(error){ el.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Could not load reviews.</p>'; return; }
+    const reviews = data || [];
+    if(reviews.length === 0){
+      el.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px; margin-bottom:16px;">No reviews yet — be the first to share your experience.</p>';
+      return;
+    }
+    const avg = (reviews.reduce((a,b)=>a+b.rating,0) / reviews.length).toFixed(1);
+    el.innerHTML = `
+      <div class="rating-summary"><div class="big">${avg}</div><div><div style="color:var(--gold-hi);">${'★'.repeat(Math.round(avg))}${'☆'.repeat(5-Math.round(avg))}</div><div class="sub">${reviews.length} review${reviews.length>1?'s':''}</div></div></div>
+      ${reviews.map(rv=>`<div class="review-card"><div class="rtop"><span class="rname">${rv.name}</span><span class="rstars">${'★'.repeat(rv.rating)}</span></div><p>${rv.comment}</p></div>`).join('')}
+    `;
+  }catch(e){ el.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Network error loading reviews.</p>'; }
+}
 
 const foodLabels = { veg:'Veg Only', nonveg:'Non-Veg Only', both:'Veg & Non-Veg', jain:'Jain Food', pureveg:'Pure Veg Only', vegan:'Vegan', glutenfree:'Gluten-Free' };
 const mealLabels = { breakfast:'Breakfast', lunch:'Lunch', dinner:'Dinner', latenight:'Late Night' };
