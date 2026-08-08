@@ -216,7 +216,12 @@ footer.dash-foot a{ color:var(--gold-hi); }
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+const SUPABASE_URL = 'https://nvvmkuyimymigcazjobv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7bJT1ZvXzpQy6akNvyKCcA_Gbh_d0S6';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 /* ---- tabs ---- */
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick = ()=>{
@@ -238,8 +243,8 @@ autoSwitch.onclick = ()=> autoSwitch.classList.toggle('on');
 
 /* ---- requests: real (from customer app) + demo filler ---- */
 const sampleRequests = [
-  {id:'m1', guests:'4 Adults + 2 Kids', meal:'Dinner · 8:30 PM', dist:'1.6 KM', bill:'₹2,500', pref:'Veg & Non-Veg', cuisine:'North Indian', real:false},
-  {id:'m2', guests:'2 Adults', meal:'Lunch · 1:15 PM', dist:'0.9 KM', bill:'₹1,000', pref:'Pure Veg', cuisine:'South Indian', real:false},
+  {id:'m1', guests:'4 Adults + 2 Kids', meal:'Dinner · 8:30 PM', dist:'1.6 KM', bill:'₹2,500', pref:'Veg & Non-Veg', cuisine:'North Indian', real:false, ts: Date.now()},
+  {id:'m2', guests:'2 Adults', meal:'Lunch · 1:15 PM', dist:'0.9 KM', bill:'₹1,000', pref:'Pure Veg', cuisine:'South Indian', real:false, ts: Date.now()},
 ];
 const addons = ['🍰 Free dessert','🥗 Free starter','🧒 Kids meal free','🍹 Mocktail','💺 Priority seating','🎂 Birthday decoration'];
 let acceptedCount = 0, totalGiven = [];
@@ -247,16 +252,23 @@ let acceptedCount = 0, totalGiven = [];
 function currentRestaurantName(){
   return document.getElementById('restPicker').value;
 }
-function readStoredRequests(){
-  try{ return JSON.parse(localStorage.getItem('dinevoRequests') || '[]'); }catch(e){ return []; }
+async function readStoredRequests(){
+  try{
+    const restName = currentRestaurantName();
+    const { data, error } = await sb.from('requests').select('*').eq('restaurant', restName);
+    if(error){ console.error('Supabase read error (requests):', error); return []; }
+    return data || [];
+  }catch(e){ console.error('Network error reading requests:', e); return []; }
 }
-function writeStoredRequests(list){
-  localStorage.setItem('dinevoRequests', JSON.stringify(list));
+async function deleteStoredRequest(id){
+  try{
+    const { error } = await sb.from('requests').delete().eq('id', id);
+    if(error) console.error('Supabase delete error (requests):', error);
+  }catch(e){ console.error('Network error deleting request:', e); }
 }
-function syncRealRequests(){
-  const stored = readStoredRequests();
+async function syncRealRequests(){
+  const mine = await readStoredRequests();
   const restName = currentRestaurantName();
-  const mine = stored.filter(r => r.restaurant === restName);
   let changed = false;
   mine.forEach(r=>{
     if(!sampleRequests.find(x=>x.id===r.id)){
@@ -288,8 +300,8 @@ function renderRequests(){
         <div class="item" style="grid-column:1/-1;"><label>Cuisine</label><b>${r.cuisine}</b></div>
       </div>
       <div class="timer-row">
-        <div class="timer-bar"><div class="timer-fill" style="width:${60 + Math.random()*30}%;"></div></div>
-        <span class="timer-txt">Respond within 10 min</span>
+        <div class="timer-bar"><div class="timer-fill" data-deadline="${(r.ts||Date.now())+10*60*1000}" style="width:100%;"></div></div>
+        <span class="timer-txt" data-deadline="${(r.ts||Date.now())+10*60*1000}">10:00</span>
       </div>
       <div class="offer-section">
         <label>Select discount to offer</label>
@@ -327,43 +339,47 @@ function renderRequests(){
   });
 }
 
-function readStoredOffers(){
-  try{ return JSON.parse(localStorage.getItem('dinevoOffers') || '[]'); }catch(e){ return []; }
-}
-function writeStoredOffers(list){
-  localStorage.setItem('dinevoOffers', JSON.stringify(list));
+async function readStoredOffers(){
+  try{
+    const restName = currentRestaurantName();
+    const { data, error } = await sb.from('offers').select('*').eq('restaurant', restName).order('ts', {ascending:false});
+    if(error){ console.error('Supabase read error (offers):', error); return []; }
+    return data || [];
+  }catch(e){ console.error('Network error reading offers:', e); return []; }
 }
 
 const sentOffers = [];
-function moveToSent(id, discount, pickedAddons){
+async function moveToSent(id, discount, pickedAddons){
   const req = sampleRequests.find(r=>r.id===id);
   if(!req) return;
   const offer = {
-    id: 'off_' + Date.now() + Math.random().toString(16).slice(2),
+    id: 'off_' + Date.now() + '_' + Math.random().toString(16).slice(2),
     requestId: req.id, restaurant: currentRestaurantName(),
     guests: req.guests, meal: req.meal, cuisine: req.cuisine, dist: req.dist, bill: req.bill, pref: req.pref,
     discount, addons: pickedAddons || [], status:'pending', counter:null, ts: Date.now()
   };
-  const stored = readStoredOffers();
-  stored.unshift(offer);
-  writeStoredOffers(stored);
-  removeRequest(id);
+  try{
+    const { error } = await sb.from('offers').insert([offer]);
+    if(error) console.error('Supabase insert error (offers):', error);
+  }catch(e){ console.error('Network error sending offer:', e); }
+  await removeRequest(id);
   totalGiven.push(parseInt(discount) || 15);
   updateStats();
+  _sentOffersSig = null;
   syncSentOffers();
 }
-function removeRequest(id){
+async function removeRequest(id){
   const idx = sampleRequests.findIndex(r=>r.id===id);
   const req = sampleRequests[idx];
   if(idx>-1) sampleRequests.splice(idx,1);
   if(req && req.real){
-    writeStoredRequests(readStoredRequests().filter(r=>r.id!==id));
+    await deleteStoredRequest(id);
   }
   renderRequests();
 }
 let _sentOffersSig = null;
-function syncSentOffers(){
-  const stored = readStoredOffers().filter(o => o.restaurant === currentRestaurantName());
+async function syncSentOffers(){
+  const stored = await readStoredOffers();
   const sig = JSON.stringify(stored);
   if(sig === _sentOffersSig) return;
   _sentOffersSig = sig;
@@ -372,13 +388,16 @@ function syncSentOffers(){
   renderSent();
   updateStats();
 }
-function respondToCounter(offerId, accept){
-  const stored = readStoredOffers();
+async function respondToCounter(offerId, accept){
+  const stored = await readStoredOffers();
   const o = stored.find(x=>x.id===offerId);
   if(!o || !o.counter) return;
-  if(accept){ o.discount = o.counter.percent; o.counter.status = 'accepted'; }
-  else{ o.counter.status = 'rejected'; }
-  writeStoredOffers(stored);
+  const updates = accept ? { discount: o.counter.percent, counter: { ...o.counter, status:'accepted' } } : { counter: { ...o.counter, status:'rejected' } };
+  try{
+    const { error } = await sb.from('offers').update(updates).eq('id', offerId);
+    if(error) console.error('Supabase update error (offers):', error);
+  }catch(e){ console.error('Network error responding to counter:', e); }
+  _sentOffersSig = null;
   syncSentOffers();
 }
 function renderSent(){
@@ -424,28 +443,20 @@ renderRequests();
 renderSent();
 updateStats();
 
-/* pick up new requests/offers the moment the customer acts (same device, other tab) */
-window.addEventListener('storage', (e)=>{
-  if(e.key === 'dinevoRequests') syncRealRequests();
-  if(e.key === 'dinevoOffers') syncSentOffers();
-});
+/* live updates: realtime subscriptions + polling fallback for reliability */
+try{
+  sb.channel('requests-live-dash')
+    .on('postgres_changes', { event:'*', schema:'public', table:'requests' }, ()=> syncRealRequests())
+    .subscribe();
+  sb.channel('offers-live-dash')
+    .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _sentOffersSig = null; syncSentOffers(); })
+    .subscribe();
+}catch(e){ console.error('Realtime subscribe failed:', e); }
 window.addEventListener('focus', ()=>{ syncRealRequests(); syncSentOffers(); });
-setInterval(()=>{ syncRealRequests(); syncSentOffers(); }, 4000);
-document.getElementById('restPicker').addEventListener('change', ()=>{ syncRealRequests(); syncSentOffers(); });
+setInterval(()=>{ syncRealRequests(); syncSentOffers(); }, 6000);
+document.getElementById('restPicker').addEventListener('change', ()=>{ _sentOffersSig = null; syncRealRequests(); syncSentOffers(); });
 
-/* simulate a new incoming request every so often, for demo feel */
-let nextId = 1;
-const demoPool = [
-  {guests:'3 Adults', meal:'Dinner · 7:45 PM', dist:'1.1 KM', bill:'₹1,800', pref:'Veg Only', cuisine:'Italian'},
-  {guests:'5 Adults + 1 Kid', meal:'Late Night · 11:00 PM', dist:'2.0 KM', bill:'₹3,200', pref:'Non-Veg Only', cuisine:'Chinese'},
-];
-setInterval(()=>{
-  if(sampleRequests.filter(r=>!r.real).length < 3 && Math.random() > 0.4){
-    const pick = demoPool[Math.floor(Math.random()*demoPool.length)];
-    sampleRequests.push({id:'d'+(nextId++), ...pick, real:false});
-    renderRequests();
-  }
-}, 14000);
+
 
 /* ---- analytics bars ---- */
 const weekData = [{d:'Mon',v:8},{d:'Tue',v:12},{d:'Wed',v:9},{d:'Thu',v:15},{d:'Fri',v:22},{d:'Sat',v:28},{d:'Sun',v:19}];
