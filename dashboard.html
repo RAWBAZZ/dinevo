@@ -354,14 +354,17 @@ async function moveToSent(id, discount, pickedAddons){
   if(!req) return;
   const offer = {
     id: 'off_' + Date.now() + '_' + Math.random().toString(16).slice(2),
-    requestId: req.id, restaurant: currentRestaurantName(),
+    request_id: req.id, restaurant: currentRestaurantName(),
     guests: req.guests, meal: req.meal, cuisine: req.cuisine, dist: req.dist, bill: req.bill, pref: req.pref,
     discount, addons: pickedAddons || [], status:'pending', counter:null, ts: Date.now()
   };
+  let ok = false;
   try{
     const { error } = await sb.from('offers').insert([offer]);
-    if(error) console.error('Supabase insert error (offers):', error);
-  }catch(e){ console.error('Network error sending offer:', e); }
+    if(error){ console.error('Supabase insert error (offers):', error); alert('Could not send offer: ' + error.message); }
+    else ok = true;
+  }catch(e){ console.error('Network error sending offer:', e); alert('Could not send offer — check your internet connection.'); }
+  if(!ok) return;
   await removeRequest(id);
   totalGiven.push(parseInt(discount) || 15);
   updateStats();
