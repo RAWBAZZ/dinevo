@@ -564,6 +564,52 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .confirmed-card h4{ font-size:16px; color:var(--gold-hi); }
 .confirmed-card p{ font-size:12.5px; color:var(--text-dim); margin-top:8px; }
 
+/* ===================== PROGRESS TRACKER (per offer) ===================== */
+.mini-progress{ display:flex; align-items:center; gap:3px; margin-top:14px; }
+.mini-progress .seg{ flex:1; height:3px; border-radius:2px; background:var(--line); }
+.mini-progress .seg.done{ background:linear-gradient(90deg,var(--gold-dim),var(--gold-hi)); }
+.mini-progress-label{ font-size:10px; color:var(--text-faint); margin-top:6px; text-transform:uppercase; letter-spacing:.05em; font-family:'JetBrains Mono'; }
+
+/* ===================== TOAST NOTIFICATION ===================== */
+#toastHost{ position:fixed; top:18px; left:0; right:0; z-index:900; display:flex; justify-content:center; pointer-events:none; }
+.toast{
+  pointer-events:auto; display:flex; align-items:center; gap:10px; background:var(--surface-2); border:1px solid var(--gold-dim);
+  border-radius:100px; padding:12px 20px; box-shadow:0 20px 50px -15px rgba(0,0,0,.7), 0 0 0 1px rgba(201,162,39,.1);
+  font-size:12.5px; color:var(--text); transform:translateY(-90px); opacity:0; transition:all .5s var(--ease); max-width:90vw;
+}
+.toast.show{ transform:translateY(0); opacity:1; }
+.toast .tick{ font-size:16px; }
+
+/* ===================== PAYMENT OVERLAY ===================== */
+.payment-overlay{
+  position:fixed; inset:0; z-index:600; background:rgba(4,3,2,.75); backdrop-filter:blur(4px);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.payment-overlay.show{ display:flex; }
+.payment-sheet{
+  width:100%; max-width:520px; max-height:92vh; overflow-y:auto; background:var(--bg);
+  border-radius:26px 26px 0 0; border:1px solid var(--line); border-bottom:none; padding:28px 24px 40px;
+  animation:sheetUp .4s var(--ease);
+}
+.pay-head{ display:flex; justify-content:space-between; align-items:center; }
+.pay-head h3{ font-size:18px; }
+.pay-summary{ margin-top:20px; padding:18px; border:1px solid var(--line); border-radius:16px; background:var(--surface); }
+.pay-row{ display:flex; justify-content:space-between; font-size:13px; padding:8px 0; border-bottom:1px solid var(--line); color:var(--text-dim); }
+.pay-row:last-child{ border-bottom:none; }
+.pay-row b{ color:var(--text); }
+.pay-token{ margin-top:16px; text-align:center; padding:20px; border-radius:16px; background:rgba(201,162,39,.08); border:1px dashed var(--gold-dim); }
+.pay-token .amt{ font-family:'JetBrains Mono'; font-size:32px; color:var(--gold-hi); }
+.pay-token .lbl{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-top:6px; }
+.pay-methods{ display:flex; gap:10px; margin-top:18px; }
+.pay-method{ flex:1; padding:14px 8px; text-align:center; border:1px solid var(--line); border-radius:12px; font-size:12px; color:var(--text-dim); }
+.pay-method.sel{ border-color:var(--gold); background:rgba(201,162,39,.09); color:var(--gold-hi); }
+.pay-method .ic{ font-size:20px; display:block; margin-bottom:6px; }
+.pay-btn{ width:100%; margin-top:22px; padding:15px; border-radius:100px; background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi)); color:#0b0904; font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.05em; }
+.pay-btn:disabled{ opacity:.5; }
+.pay-note{ text-align:center; font-size:11px; color:var(--text-faint); margin-top:12px; }
+.pay-spinner{ display:inline-block; width:16px; height:16px; border:2px solid rgba(11,9,4,.3); border-top-color:#0b0904; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:8px; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
 /* ===================== SMART MATCHING ===================== */
 .match-demo{
   background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:40px; margin-top:50px;
@@ -779,6 +825,14 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 <div class="profile-overlay" id="profileOverlay">
   <div class="profile-sheet" id="profileSheet"></div>
 </div>
+
+<!-- PAYMENT OVERLAY -->
+<div class="payment-overlay" id="paymentOverlay">
+  <div class="payment-sheet" id="paymentSheet"></div>
+</div>
+
+<!-- TOAST HOST -->
+<div id="toastHost"></div>
 
 <!-- DISHES -->
 <section id="dishes">
@@ -1395,6 +1449,12 @@ async function readOffers(){
   }catch(e){ console.error('Network error reading offers:', e); return []; }
 }
 let _offersSig = null;
+const PROGRESS_STEPS = ['Quote sent','Responded','Accepted','Token paid','Confirmed','Visit','Adjusted','Review'];
+function progressTracker(doneCount, currentLabel){
+  const segs = PROGRESS_STEPS.map((_, i)=> `<div class="seg ${i < doneCount ? 'done' : ''}"></div>`).join('');
+  return `<div class="mini-progress">${segs}</div><div class="mini-progress-label">${currentLabel}</div>`;
+}
+
 async function renderOffers(){
   const offersRaw = await readOffers();
   const sig = JSON.stringify(offersRaw);
@@ -1415,6 +1475,7 @@ async function renderOffers(){
         <div class="tick">✅</div>
         <h4>Booking confirmed at ${o.restaurant}</h4>
         <p>${o.guests} · ${o.meal} · ${o.discount} off · 2% token paid</p>
+        ${progressTracker(5, 'Step 5 of 8 · Confirmed — see you at the table')}
       </div></div>`;
     }
     if(o.status === 'declined'){
@@ -1431,6 +1492,7 @@ async function renderOffers(){
       <p class="meta">${o.guests} · ${o.meal} · ${o.cuisine} · Bill ~${o.bill}</p>
       ${o.addons && o.addons.length ? `<div class="addons-row">${o.addons.map(a=>`<span>${a}</span>`).join('')}</div>` : ''}
       ${note}
+      ${progressTracker(2, 'Step 2 of 8 · Restaurant responded — your move')}
       <div class="offer-actions">
         <button class="btn-accept" data-act="accept" ${counterLocked?'disabled style="opacity:.4;"':''}>🔒 Accept & Pay 2% Token</button>
         <button class="btn-bargain" data-act="bargain" ${counterLocked?'disabled style="opacity:.4;"':''}>🤝 Bargain</button>
@@ -1453,7 +1515,10 @@ async function renderOffers(){
     const acceptBtn = card.querySelector('[data-act="accept"]');
     const bargainBtn = card.querySelector('[data-act="bargain"]');
     const declineBtn = card.querySelector('[data-act="decline"]');
-    if(acceptBtn) acceptBtn.onclick = ()=> updateOfferStatus(id, 'confirmed');
+    if(acceptBtn) acceptBtn.onclick = ()=>{
+      const o = offers.find(x=>x.id===id);
+      if(o) openPayment(o);
+    };
     if(declineBtn) declineBtn.onclick = ()=> updateOfferStatus(id, 'declined');
     if(bargainBtn) bargainBtn.onclick = ()=>{
       document.getElementById('bargain-'+id).classList.toggle('show');
@@ -1473,6 +1538,65 @@ async function renderOffers(){
     }
   });
 }
+
+/* ================= TOAST ================= */
+function showToast(msg, icon){
+  const host = document.getElementById('toastHost');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="tick">${icon || '✅'}</span><span>${msg}</span>`;
+  host.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=> el.remove(), 500); }, 3800);
+}
+
+/* ================= PAYMENT FLOW ================= */
+function openPayment(o){
+  const overlay = document.getElementById('paymentOverlay');
+  const sheet = document.getElementById('paymentSheet');
+  const billNum = parseInt(String(o.bill).replace(/[^0-9]/g,'')) || null;
+  const discPct = parseInt(o.discount) || 0;
+  const finalBill = billNum ? Math.round(billNum * (1 - discPct/100)) : null;
+  const token = billNum ? Math.max(20, Math.round(billNum * 0.02)) : 50;
+  sheet.innerHTML = `
+    <div class="pay-head"><h3>Secure your table</h3><button class="close-btn" id="paymentClose" style="position:static; background:var(--surface); width:34px; height:34px;">✕</button></div>
+    <div class="pay-summary">
+      <div class="pay-row"><span>Restaurant</span><b>${o.restaurant}</b></div>
+      <div class="pay-row"><span>Guests</span><b>${o.guests}</b></div>
+      <div class="pay-row"><span>Meal</span><b>${o.meal}</b></div>
+      <div class="pay-row"><span>Discount</span><b>${o.discount} off</b></div>
+      ${billNum ? `<div class="pay-row"><span>Estimated bill</span><b>₹${billNum.toLocaleString('en-IN')} → ₹${finalBill.toLocaleString('en-IN')}</b></div>` : ''}
+    </div>
+    <div class="pay-token">
+      <div class="amt">₹${token.toLocaleString('en-IN')}</div>
+      <div class="lbl">2% token to confirm your table</div>
+    </div>
+    <div class="pay-methods" id="payMethods">
+      <div class="pay-method sel" data-m="upi"><span class="ic">📲</span>UPI</div>
+      <div class="pay-method" data-m="card"><span class="ic">💳</span>Card</div>
+      <div class="pay-method" data-m="wallet"><span class="ic">👛</span>Wallet</div>
+    </div>
+    <button class="pay-btn" id="payNowBtn">Pay ₹${token.toLocaleString('en-IN')} securely</button>
+    <div class="pay-note">Fully adjusted against your final bill at the restaurant. Refundable per cancellation policy.</div>
+  `;
+  overlay.classList.add('show');
+  document.getElementById('paymentClose').onclick = ()=> overlay.classList.remove('show');
+  overlay.onclick = (e)=>{ if(e.target === overlay) overlay.classList.remove('show'); };
+  sheet.querySelectorAll('.pay-method').forEach(m=>{
+    m.onclick = ()=>{ sheet.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('sel')); m.classList.add('sel'); };
+  });
+  document.getElementById('payNowBtn').onclick = async ()=>{
+    const btn = document.getElementById('payNowBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="pay-spinner"></span>Processing payment…`;
+    await new Promise(res => setTimeout(res, 1300));
+    await updateOfferStatus(o.id, 'confirmed');
+    overlay.classList.remove('show');
+    showToast(`Token paid — booking confirmed at ${o.restaurant}!`, '🎉');
+    setTimeout(()=> document.getElementById('offers').scrollIntoView({behavior:'smooth'}), 400);
+  };
+}
+
 async function updateOfferStatus(id, status){
   try{
     const { error } = await sb.from('offers').update({ status }).eq('id', id);
