@@ -28,6 +28,8 @@ window.dinevoAuth = (function(){
       #authGate .authTab{flex:1;padding:9px 0;border-radius:100px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#9a9686;cursor:pointer;background:none;border:none;font-family:inherit;}
       #authGate .authTab.active{background:linear-gradient(120deg,#8a6f22,#f1d68c);color:#0b0904;font-weight:700;}
       #authGate .authHint{font-size:10.5px;color:#6b6858;margin-top:-6px;margin-bottom:14px;max-width:320px;}
+      #authGate .linklike{background:none!important;border:none!important;width:auto!important;padding:0!important;color:#9a9686!important;font-size:11.5px!important;text-decoration:underline;text-transform:none!important;font-weight:400!important;letter-spacing:0!important;margin-top:14px!important;cursor:pointer;}
+      #authGate .backlink{background:none!important;border:none!important;width:auto!important;padding:0!important;color:#9a9686!important;font-size:11.5px!important;text-decoration:underline;text-transform:none!important;font-weight:400!important;letter-spacing:0!important;margin-bottom:16px!important;}
       #authTopbar{position:fixed;top:14px;right:14px;z-index:1500;padding:8px 8px 8px 16px;font-size:10.5px;color:#9a9686;display:flex;align-items:center;gap:10px;background:rgba(8,7,5,.85);backdrop-filter:blur(8px);border:1px solid #2a251a;border-radius:100px;font-family:'JetBrains Mono',monospace;}
       #authTopbar button{background:none;border:1px solid #2a251a;color:#9a9686;border-radius:100px;padding:6px 13px;font-size:10px;cursor:pointer;font-family:inherit;}
       #authTopbar span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -50,6 +52,7 @@ window.dinevoAuth = (function(){
       <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
       <input type="password" id="authPassword2" placeholder="Confirm password" autocomplete="new-password" style="display:none;" />
       <button id="authSubmitBtn">Log In</button>
+      <button class="linklike" id="authForgotBtn">Forgot password?</button>
       <div class="msg" id="authMsg"></div>
       <button class="faceBtn" id="authFaceBtn" style="display:none;">👁 Unlock with Face ID / Touch ID</button>
     </div>`);
@@ -61,12 +64,14 @@ window.dinevoAuth = (function(){
     const pw2 = document.getElementById('authPassword2');
     const subtitle = document.getElementById('authSubtitle');
     const submitBtn = document.getElementById('authSubmitBtn');
+    const forgotBtn = document.getElementById('authForgotBtn');
     const msg = document.getElementById('authMsg');
 
     function setMode(m){
       mode = m;
       tabs.forEach(t=> t.classList.toggle('active', t.dataset.mode === m));
       msg.textContent = '';
+      forgotBtn.style.display = m === 'login' ? 'inline-block' : 'none';
       if(m === 'signup'){
         pw2.style.display = 'block';
         subtitle.textContent = 'Create an account — we\'ll email you a link to verify it, then you can log in.';
@@ -80,6 +85,17 @@ window.dinevoAuth = (function(){
       }
     }
     tabs.forEach(t=> t.onclick = ()=> setMode(t.dataset.mode));
+
+    forgotBtn.onclick = async ()=>{
+      const email = document.getElementById('authEmail').value.trim();
+      if(!email || !email.includes('@')){ msg.textContent = 'Enter your email above first, then tap "Forgot password?" again.'; return; }
+      msg.textContent = 'Sending reset link…';
+      try{
+        const redirectTo = window.location.origin + window.location.pathname;
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+        msg.textContent = error ? ('Could not send reset link: ' + error.message) : '✓ Check your email for a password reset link.';
+      }catch(e){ msg.textContent = 'Network error — please try again.'; }
+    };
 
     submitBtn.onclick = async ()=>{
       const email = document.getElementById('authEmail').value.trim();
@@ -122,6 +138,36 @@ window.dinevoAuth = (function(){
   function hideGate(){
     const gate = document.getElementById('authGate');
     if(gate) gate.remove();
+  }
+
+  function showResetPasswordForm(){
+    injectStyles();
+    const existing = document.getElementById('authGate');
+    if(existing) existing.remove();
+    const gate = el(`<div id="authGate">
+      <div class="authIcon">🔑</div>
+      <h2>Set a new password</h2>
+      <p>You tapped a reset link — choose a new password for your account below.</p>
+      <input type="password" id="resetPassword" placeholder="New password" autocomplete="new-password" />
+      <input type="password" id="resetPassword2" placeholder="Confirm new password" autocomplete="new-password" />
+      <button id="resetSubmitBtn">Set New Password</button>
+      <div class="msg" id="resetMsg"></div>
+    </div>`);
+    document.body.appendChild(gate);
+    document.getElementById('resetSubmitBtn').onclick = async ()=>{
+      const p1 = document.getElementById('resetPassword').value;
+      const p2 = document.getElementById('resetPassword2').value;
+      const msg = document.getElementById('resetMsg');
+      if(!p1 || p1.length < 6){ msg.textContent = 'Password must be at least 6 characters.'; return; }
+      if(p1 !== p2){ msg.textContent = 'Passwords don\'t match.'; return; }
+      msg.textContent = 'Updating…';
+      try{
+        const { data, error } = await sb.auth.updateUser({ password: p1 });
+        if(error){ msg.textContent = error.message; return; }
+        msg.textContent = '✓ Password updated!';
+        setTimeout(()=> onAuthed(data.user), 700);
+      }catch(e){ msg.textContent = 'Network error — please try again.'; }
+    };
   }
 
   function showTopbar(email){
@@ -196,6 +242,15 @@ window.dinevoAuth = (function(){
   }
 
   async function init(appName, icon){
+    const isRecovery = window.location.hash.includes('type=recovery');
+    if(isRecovery){
+      showResetPasswordForm();
+      sb.auth.onAuthStateChange((event, sess)=>{
+        if(event === 'SIGNED_IN' && sess && !currentUser){ /* wait for password form submit */ }
+        if(event === 'SIGNED_OUT'){ location.reload(); }
+      });
+      return;
+    }
     const { data } = await sb.auth.getSession();
     const session = data && data.session;
     if(session){
@@ -211,6 +266,7 @@ window.dinevoAuth = (function(){
       showGate(appName, icon);
     }
     sb.auth.onAuthStateChange((event, sess)=>{
+      if(event === 'PASSWORD_RECOVERY'){ showResetPasswordForm(); return; }
       if(event === 'SIGNED_IN' && sess && !currentUser){ onAuthed(sess.user); }
       if(event === 'SIGNED_OUT'){ location.reload(); }
     });
