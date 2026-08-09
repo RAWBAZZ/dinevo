@@ -918,10 +918,9 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth.js"></script>
 <script>
-const SUPABASE_URL = 'https://nvvmkuyimymigcazjobv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_7bJT1ZvXzpQy6akNvyKCcA_Gbh_d0S6';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+dinevoAuth.init('Diner', '🍽️');
 /* ================= REVEAL ON SCROLL ================= */
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries)=>{
@@ -1363,7 +1362,7 @@ async function openProfile(name){
     const text = document.getElementById('reviewText').value.trim();
     if(picked === 0 || !text){ alert('Please add a star rating and a short review.'); return; }
     try{
-      const { error } = await sb.from('reviews').insert([{ id:'rev_'+Date.now()+'_'+Math.random().toString(16).slice(2), restaurant:r.name, name, rating:picked, comment:text, ts:Date.now() }]);
+      const { error } = await sb.from('reviews').insert([{ id:'rev_'+Date.now()+'_'+Math.random().toString(16).slice(2), customer_id: dinevoAuth.getUser() ? dinevoAuth.getUser().id : null, restaurant:r.name, name, rating:picked, comment:text, ts:Date.now() }]);
       if(error){ alert('Could not post review: ' + error.message); return; }
     }catch(e){ alert('Network error posting review.'); return; }
     document.getElementById('reviewText').value = '';
@@ -1410,6 +1409,7 @@ async function pushRequestsToStorage(){
     const r = restaurantData.find(x=>x.name===name);
     rows.push({
       id: Date.now() + '_' + Math.random().toString(16).slice(2),
+      customer_id: dinevoAuth.getUser() ? dinevoAuth.getUser().id : null,
       restaurant: name,
       guests: guestParts.join(' + '),
       meal: `${mealLabels[state.meal] || 'Dinner'} · ${formatTime(state.time) || '8:30 PM'}`,
@@ -1613,14 +1613,16 @@ async function sendCounterOffer(id, percent){
   _offersSig = null;
   renderOffers();
 }
-renderOffers();
-try{
-  sb.channel('offers-live-customer')
-    .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _offersSig = null; renderOffers(); })
-    .subscribe();
-}catch(e){ console.error('Realtime subscribe failed:', e); }
-window.addEventListener('focus', renderOffers);
-setInterval(renderOffers, 6000);
+dinevoAuth.ready.then(()=>{
+  renderOffers();
+  try{
+    sb.channel('offers-live-customer')
+      .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _offersSig = null; renderOffers(); })
+      .subscribe();
+  }catch(e){ console.error('Realtime subscribe failed:', e); }
+  window.addEventListener('focus', renderOffers);
+  setInterval(renderOffers, 6000);
+});
 
 /* ================= DISH MARQUEE ================= */
 const dishes = [

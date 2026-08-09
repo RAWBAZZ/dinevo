@@ -149,28 +149,15 @@ footer.dash-foot a{ color:var(--gold-hi); }
 
 <div class="wrap">
   <div class="banner">
-    ✅ Connected to your Dinevo customer app — when you submit the booking wizard on this same device/browser, real requests appear below tagged <b>LIVE</b>. Note: this works because both apps share this browser's storage — for real customers on other phones to reach real restaurants, you'll eventually need a backend/database (happy to help set that up next).
+    ✅ Connected to your live Dinevo database — requests and offers sync in real time with any customer, on any device.
   </div>
 
   <div class="rest-select">
     <div class="info">
-      <div class="avatar">🍢</div>
-      <div><h3>Copper & Clove</h3><p>North Indian · Mughlai · 4.7★</p></div>
+      <div class="avatar" id="restAvatar">🍽️</div>
+      <div><h3 id="restNameDisplay">Loading…</h3><p id="restMetaDisplay"></p></div>
     </div>
-    <select id="restPicker">
-      <option>Copper & Clove</option>
-      <option>Saffron Leaf</option>
-      <option>The Ember House</option>
-      <option>Bombay Bistro</option>
-      <option>Jain Bhoj</option>
-      <option>Osteria Nera</option>
-      <option>Green Bowl Vegan</option>
-      <option>Kabab Junction</option>
-      <option>Dragon Wok</option>
-      <option>Sushi Ko</option>
-      <option>Punjab Da Dhaba</option>
-      <option>Cafe Latte House</option>
-    </select>
+    <select id="restPicker"></select>
   </div>
 
   <div class="stat-grid">
@@ -249,10 +236,51 @@ footer.dash-foot a{ color:var(--gold-hi); }
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth.js"></script>
 <script>
-const SUPABASE_URL = 'https://nvvmkuyimymigcazjobv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_7bJT1ZvXzpQy6akNvyKCcA_Gbh_d0S6';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+dinevoAuth.init('Partner', '🍴');
+
+const ALL_RESTAURANTS = ['Copper & Clove','Saffron Leaf','The Ember House','Bombay Bistro','Jain Bhoj','Osteria Nera','Green Bowl Vegan','Kabab Junction','Dragon Wok','Sushi Ko','Punjab Da Dhaba','Cafe Latte House'];
+let myRestaurants = [];
+
+async function showClaimScreen(user){
+  const { data, error } = await sb.from('restaurant_profiles').select('*');
+  const claimed = (data || []).map(r => r.restaurant);
+  const mine = (data || []).filter(r => r.owner_id === user.id).map(r => r.restaurant);
+  if(mine.length > 0){ myRestaurants = mine; return true; }
+
+  const available = ALL_RESTAURANTS.filter(r => !claimed.includes(r));
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:1900;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px; width:100%; text-align:center;">
+      <div class="eyebrow" style="justify-content:center; margin-bottom:14px;">One-time setup</div>
+      <h2 style="font-size:20px; margin-bottom:12px;">Claim your restaurant</h2>
+      <p style="font-size:13px; color:var(--text-faint); margin-bottom:24px;">Pick the restaurant you manage. This links it permanently to your account.</p>
+      <select id="claimPicker" style="width:100%; margin-bottom:16px; padding:12px;">
+        ${available.length ? available.map(r=>`<option>${r}</option>`).join('') : '<option>No restaurants available to claim</option>'}
+      </select>
+      <button class="btn-send" id="claimBtn" style="width:100%;" ${available.length?'':'disabled'}>Claim This Restaurant</button>
+      <div id="claimMsg" style="margin-top:14px; font-size:12px; color:var(--gold-hi);"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  return new Promise(resolve=>{
+    document.getElementById('claimBtn').onclick = async ()=>{
+      const restaurant = document.getElementById('claimPicker').value;
+      const msg = document.getElementById('claimMsg');
+      msg.textContent = 'Claiming…';
+      const { error } = await sb.from('restaurant_profiles').insert([{ restaurant, owner_id: user.id }]);
+      if(error){
+        msg.textContent = error.message.includes('duplicate') ? 'That restaurant was just claimed by someone else — pick another.' : ('Error: ' + error.message);
+        return;
+      }
+      myRestaurants = [restaurant];
+      overlay.remove();
+      resolve(true);
+    };
+  });
+}
 
 /* ---- tabs ---- */
 document.querySelectorAll('.tab').forEach(t=>{
@@ -386,7 +414,7 @@ async function moveToSent(id, discount, pickedAddons){
   if(!req) return;
   const offer = {
     id: 'off_' + Date.now() + '_' + Math.random().toString(16).slice(2),
-    request_id: req.id, restaurant: currentRestaurantName(),
+    request_id: req.id, customer_id: req.customer_id, restaurant: currentRestaurantName(),
     guests: req.guests, meal: req.meal, cuisine: req.cuisine, dist: req.dist, bill: req.bill, pref: req.pref,
     discount, addons: pickedAddons || [], status:'pending', counter:null, ts: Date.now()
   };
@@ -472,24 +500,61 @@ function updateStats(){
   document.getElementById('statRequests').textContent = sampleRequests.length + sentOffers.length;
 }
 
-syncRealRequests();
-syncSentOffers();
-renderRequests();
-renderSent();
-updateStats();
+const REST_META = {
+  'Copper & Clove':{emo:'🍢',cuisine:'North Indian · Mughlai',rating:'4.7'}, 'Saffron Leaf':{emo:'🥘',cuisine:'South Indian · Multi Cuisine',rating:'4.9'},
+  'The Ember House':{emo:'🍖',cuisine:'BBQ · Continental',rating:'4.6'}, 'Bombay Bistro':{emo:'🌮',cuisine:'Street Food · Fast Food',rating:'4.4'},
+  'Jain Bhoj':{emo:'🍲',cuisine:'North Indian · Jain',rating:'4.8'}, 'Osteria Nera':{emo:'🍝',cuisine:'Italian · Cafe',rating:'4.5'},
+  'Green Bowl Vegan':{emo:'🥗',cuisine:'Multi Cuisine · Vegan',rating:'4.6'}, 'Kabab Junction':{emo:'🍗',cuisine:'Mughlai · BBQ',rating:'4.3'},
+  'Dragon Wok':{emo:'🥡',cuisine:'Chinese · Seafood',rating:'4.5'}, 'Sushi Ko':{emo:'🍣',cuisine:'Japanese · Seafood',rating:'4.8'},
+  'Punjab Da Dhaba':{emo:'🫓',cuisine:'North Indian · Punjabi',rating:'4.6'}, 'Cafe Latte House':{emo:'☕',cuisine:'Cafe · Desserts',rating:'4.4'}
+};
+function populateRestPicker(){
+  const picker = document.getElementById('restPicker');
+  picker.innerHTML = myRestaurants.map(r=>`<option>${r}</option>`).join('');
+  updateRestDisplay();
+}
+function updateRestDisplay(){
+  const name = currentRestaurantName();
+  const meta = REST_META[name] || {emo:'🍽️',cuisine:'',rating:'—'};
+  document.getElementById('restAvatar').textContent = meta.emo;
+  document.getElementById('restNameDisplay').textContent = name;
+  document.getElementById('restMetaDisplay').textContent = `${meta.cuisine} · ${meta.rating}★`;
+}
 
-/* live updates: realtime subscriptions + polling fallback for reliability */
-try{
-  sb.channel('requests-live-dash')
-    .on('postgres_changes', { event:'*', schema:'public', table:'requests' }, ()=> syncRealRequests())
-    .subscribe();
-  sb.channel('offers-live-dash')
-    .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _sentOffersSig = null; syncSentOffers(); })
-    .subscribe();
-}catch(e){ console.error('Realtime subscribe failed:', e); }
-window.addEventListener('focus', ()=>{ syncRealRequests(); syncSentOffers(); });
-setInterval(()=>{ syncRealRequests(); syncSentOffers(); }, 6000);
-document.getElementById('restPicker').addEventListener('change', ()=>{ _sentOffersSig = null; syncRealRequests(); syncSentOffers(); loadWaitStatus(); loadDashReviews(); });
+async function startDashboard(){
+  populateRestPicker();
+  syncRealRequests();
+  syncSentOffers();
+  renderRequests();
+  renderSent();
+  updateStats();
+  loadWaitStatus();
+  loadDashReviews();
+
+  try{
+    sb.channel('requests-live-dash')
+      .on('postgres_changes', { event:'*', schema:'public', table:'requests' }, ()=> syncRealRequests())
+      .subscribe();
+    sb.channel('offers-live-dash')
+      .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _sentOffersSig = null; syncSentOffers(); })
+      .subscribe();
+    sb.channel('reviews-live-dash')
+      .on('postgres_changes', { event:'*', schema:'public', table:'reviews' }, loadDashReviews)
+      .subscribe();
+  }catch(e){ console.error('Realtime subscribe failed:', e); }
+  window.addEventListener('focus', ()=>{ syncRealRequests(); syncSentOffers(); });
+  setInterval(()=>{ syncRealRequests(); syncSentOffers(); }, 6000);
+  document.getElementById('restPicker').addEventListener('change', ()=>{
+    _sentOffersSig = null;
+    updateRestDisplay();
+    syncRealRequests(); syncSentOffers(); loadWaitStatus(); loadDashReviews();
+  });
+}
+
+dinevoAuth.ready.then(async (user)=>{
+  const ok = await showClaimScreen(user);
+  if(ok) startDashboard();
+});
 
 /* ================= LIVE WAITLIST ================= */
 let waitMinutes = 0, tablesAvail = 4;
@@ -516,7 +581,6 @@ document.getElementById('updateStatusBtn').onclick = async ()=>{
     setTimeout(()=> saved.style.display = 'none', 2500);
   }catch(e){ alert('Network error updating status.'); }
 };
-loadWaitStatus();
 
 /* ================= REVIEWS (dashboard view) ================= */
 async function loadDashReviews(){
@@ -539,12 +603,7 @@ async function loadDashReviews(){
     `).join('');
   }catch(e){ box.innerHTML = '<p style="color:var(--text-faint); font-size:12.5px;">Network error loading reviews.</p>'; }
 }
-loadDashReviews();
-try{
-  sb.channel('reviews-live-dash')
-    .on('postgres_changes', { event:'*', schema:'public', table:'reviews' }, loadDashReviews)
-    .subscribe();
-}catch(e){ console.error('Realtime subscribe failed:', e); }
+
 
 
 

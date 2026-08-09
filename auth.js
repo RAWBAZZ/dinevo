@@ -1,0 +1,160 @@
+/* ===================== DINEVO SHARED AUTH ===================== */
+const SUPABASE_URL = 'https://nvvmkuyimymigcazjobv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7bJT1ZvXzpQy6akNvyKCcA_Gbh_d0S6';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window.dinevoAuth = (function(){
+  let resolveReady;
+  const ready = new Promise(res => resolveReady = res);
+  let currentUser = null;
+
+  function el(html){ const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; }
+
+  function injectStyles(){
+    if(document.getElementById('authStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'authStyles';
+    style.textContent = `
+      #authGate{position:fixed;inset:0;z-index:2000;background:#080705;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;font-family:'Manrope',sans-serif;color:#eae6da;text-align:center;}
+      #authGate .authIcon{width:56px;height:56px;border-radius:16px;background:#15130d;border:1px solid #2a251a;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:20px;}
+      #authGate h2{font-family:'Michroma',sans-serif;font-size:18px;margin-bottom:10px;letter-spacing:.03em;}
+      #authGate p{font-size:13px;color:#9a9686;max-width:320px;line-height:1.65;margin-bottom:26px;}
+      #authGate input{width:100%;max-width:320px;background:#15130d;border:1px solid #2a251a;border-radius:100px;padding:14px 20px;color:#eae6da;font-size:14px;text-align:center;margin-bottom:14px;font-family:inherit;}
+      #authGate input:focus{outline:2px solid #8a6f22;outline-offset:2px;}
+      #authGate button{width:100%;max-width:320px;padding:14px;border-radius:100px;background:linear-gradient(120deg,#8a6f22,#f1d68c);color:#0b0904;font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;border:none;cursor:pointer;font-family:inherit;}
+      #authGate .msg{margin-top:16px;font-size:12.5px;color:#f1d68c;min-height:18px;max-width:320px;}
+      #authGate .faceBtn{margin-top:12px;background:none;border:1px solid #2a251a;color:#f1d68c;}
+      #authTopbar{position:fixed;top:14px;right:14px;z-index:1500;padding:8px 8px 8px 16px;font-size:10.5px;color:#9a9686;display:flex;align-items:center;gap:10px;background:rgba(8,7,5,.85);backdrop-filter:blur(8px);border:1px solid #2a251a;border-radius:100px;font-family:'JetBrains Mono',monospace;}
+      #authTopbar button{background:none;border:1px solid #2a251a;color:#9a9686;border-radius:100px;padding:6px 13px;font-size:10px;cursor:pointer;font-family:inherit;}
+      #authTopbar span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showGate(appName, icon){
+    injectStyles();
+    if(document.getElementById('authGate')) return;
+    const gate = el(`<div id="authGate">
+      <div class="authIcon">${icon || '🔐'}</div>
+      <h2>DINEVO ${appName}</h2>
+      <p>Sign in with your email — we'll send you a magic link, no password to remember.</p>
+      <input type="email" id="authEmail" placeholder="you@example.com" />
+      <button id="authSendBtn">Send Magic Link</button>
+      <div class="msg" id="authMsg"></div>
+      <button class="faceBtn" id="authFaceBtn" style="display:none;">👁 Unlock with Face ID / Touch ID</button>
+    </div>`);
+    document.body.appendChild(gate);
+    maybeOfferFaceUnlock();
+
+    document.getElementById('authSendBtn').onclick = async ()=>{
+      const email = document.getElementById('authEmail').value.trim();
+      const msg = document.getElementById('authMsg');
+      if(!email || !email.includes('@')){ msg.textContent = 'Enter a valid email address.'; return; }
+      msg.textContent = 'Sending…';
+      const redirectTo = window.location.origin + window.location.pathname;
+      try{
+        const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: redirectTo } });
+        msg.textContent = error ? ('Could not send link: ' + error.message) : '✓ Check your email — tap the link to sign in.';
+      }catch(e){ msg.textContent = 'Network error — please try again.'; }
+    };
+  }
+
+  function hideGate(){
+    const gate = document.getElementById('authGate');
+    if(gate) gate.remove();
+  }
+
+  function showTopbar(email){
+    injectStyles();
+    if(document.getElementById('authTopbar')) return;
+    const bar = el(`<div id="authTopbar"><span>${email}</span><button id="authSignOut">Sign out</button></div>`);
+    document.body.appendChild(bar);
+    document.getElementById('authSignOut').onclick = async ()=>{
+      await sb.auth.signOut();
+      localStorage.removeItem('dinevoFaceCred');
+      location.reload();
+    };
+  }
+
+  /* ---- Face ID / Touch ID: a device-local convenience unlock, not a server-verified factor.
+     The real security boundary is still the Supabase session; this just re-gates the UI
+     on this device using the phone's own biometric prompt. ---- */
+  async function enableFaceUnlock(){
+    if(!window.PublicKeyCredential || !currentUser) return false;
+    try{
+      const cred = await navigator.credentials.create({
+        publicKey:{
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp:{ name:'Dinevo' },
+          user:{ id: crypto.getRandomValues(new Uint8Array(16)), name: currentUser.email, displayName: currentUser.email },
+          pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+          authenticatorSelection:{ authenticatorAttachment:'platform', userVerification:'required' },
+          timeout:60000
+        }
+      });
+      const id = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+      localStorage.setItem('dinevoFaceCred', id);
+      return true;
+    }catch(e){ console.error('Face ID setup failed:', e); return false; }
+  }
+  async function tryFaceUnlock(){
+    const id = localStorage.getItem('dinevoFaceCred');
+    if(!id || !window.PublicKeyCredential) return false;
+    try{
+      const rawId = Uint8Array.from(atob(id), c=>c.charCodeAt(0));
+      await navigator.credentials.get({
+        publicKey:{
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          allowCredentials:[{ id: rawId, type:'public-key' }],
+          userVerification:'required',
+          timeout:60000
+        }
+      });
+      return true;
+    }catch(e){ return false; }
+  }
+  async function maybeOfferFaceUnlock(){
+    const id = localStorage.getItem('dinevoFaceCred');
+    const { data } = await sb.auth.getSession();
+    const session = data && data.session;
+    const btn = document.getElementById('authFaceBtn');
+    if(id && session && btn){
+      btn.style.display = 'block';
+      btn.onclick = async ()=>{
+        const ok = await tryFaceUnlock();
+        if(ok){ onAuthed(session.user); }
+        else{ const m = document.getElementById('authMsg'); if(m) m.textContent = 'Face ID unlock failed — try email instead.'; }
+      };
+    }
+  }
+
+  function onAuthed(user){
+    currentUser = user;
+    hideGate();
+    showTopbar(user.email);
+    resolveReady(user);
+  }
+
+  async function init(appName, icon){
+    const { data } = await sb.auth.getSession();
+    const session = data && data.session;
+    if(session){
+      onAuthed(session.user);
+      if(!localStorage.getItem('dinevoFaceCred') && window.PublicKeyCredential){
+        setTimeout(async ()=>{
+          if(confirm('Enable Face ID / Touch ID for faster sign-in next time on this device?')){
+            await enableFaceUnlock();
+          }
+        }, 900);
+      }
+    } else {
+      showGate(appName, icon);
+    }
+    sb.auth.onAuthStateChange((event, sess)=>{
+      if(event === 'SIGNED_IN' && sess && !currentUser){ onAuthed(sess.user); }
+      if(event === 'SIGNED_OUT'){ location.reload(); }
+    });
+  }
+
+  return { init, ready, getUser: ()=> currentUser };
+})();
