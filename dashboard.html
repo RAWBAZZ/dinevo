@@ -431,7 +431,11 @@ function renderSent(){
     return;
   }
   panel.innerHTML = sentOffers.map(o=>{
-    const statusLabel = o.status==='pending' ? 'Awaiting customer' : o.status==='confirmed' ? 'Booking confirmed' : o.status;
+    const statusLabel = o.status==='pending' ? 'Awaiting customer' : o.status==='confirmed' ? 'Booking confirmed' : o.status==='cancelled_by_customer' ? 'Cancelled by customer' : o.status;
+    const cancelNote = o.status==='cancelled_by_customer' ? `
+      <div style="margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(180,72,62,.1); border:1px dashed var(--nonveg);">
+        <p style="font-size:11.5px; color:#e6968c;">This booking (${o.guests} · ${o.meal} · ${o.discount} off) was cancelled by the customer after confirming. The table is free again.</p>
+      </div>` : '';
     const counterBlock = (o.counter && o.counter.status==='pending') ? `
       <div style="margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(201,162,39,.08); border:1px dashed var(--gold-dim);">
         <p style="font-size:11.5px; color:var(--gold-hi); margin-bottom:8px;">Customer countered, asking for <b>${o.counter.percent}</b> off instead</p>
@@ -444,8 +448,9 @@ function renderSent(){
     <div class="sent-card" style="flex-direction:column; align-items:stretch;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
         <div class="l"><h4>${o.guests} · ${o.meal}</h4><p>${o.cuisine} · Offered ${o.discount} off</p></div>
-        <span class="status-pill ${o.status==='confirmed' ? 'accepted' : o.status}">${statusLabel}</span>
+        <span class="status-pill ${o.status==='confirmed' ? 'accepted' : o.status==='cancelled_by_customer' ? 'declined' : o.status}">${statusLabel}</span>
       </div>
+      ${cancelNote}
       ${counterBlock}
     </div>`;
   }).join('');

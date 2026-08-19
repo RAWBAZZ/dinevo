@@ -195,45 +195,38 @@ section{ position:relative; z-index:2; padding:130px 0; }
 .section-head h2{ font-size:clamp(28px,4vw,46px); margin-top:18px; line-height:1.15; }
 .section-head p{ color:var(--text-dim); margin-top:16px; font-size:16px; line-height:1.7; }
 
-/* ===================== FLOW TIMELINE ===================== */
+/* ===================== FLOW STORY (tap-through) ===================== */
 .flow{ background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-.flow-scroll{
-  overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
-  scroll-snap-type:x proximity; padding:36px 24px 26px; margin:0 -24px;
-  scrollbar-width:thin; scrollbar-color:var(--gold-dim) transparent;
+.story-card{
+  position:relative; max-width:460px; margin:0 auto; height:400px; border-radius:22px; overflow:hidden;
+  background:linear-gradient(160deg, var(--surface), var(--surface-2)); border:1px solid var(--line);
+  box-shadow:0 30px 70px -25px rgba(0,0,0,.6);
 }
-.flow-scroll::-webkit-scrollbar{ height:5px; }
-.flow-scroll::-webkit-scrollbar-track{ background:var(--line); border-radius:3px; }
-.flow-scroll::-webkit-scrollbar-thumb{ background:var(--gold-dim); border-radius:3px; }
-.flow-track{ display:flex; position:relative; min-width:max-content; padding:0 40px; }
-.flow-line-bg{ position:absolute; top:28px; left:40px; right:40px; height:2px; background:var(--line); }
-.flow-line-fill{
-  position:absolute; top:28px; left:40px; width:0%; height:2px;
-  background:linear-gradient(90deg, var(--gold-hi), var(--gold-dim));
-  box-shadow:0 0 12px var(--gold); transition:width .5s var(--ease);
+.story-bar{ position:absolute; top:14px; left:14px; right:14px; z-index:5; display:flex; gap:5px; }
+.story-bar .seg{ flex:1; height:3px; border-radius:2px; background:rgba(255,255,255,.14); overflow:hidden; }
+.story-bar .seg i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold-dim),var(--gold-hi)); }
+.story-bar .seg.done i{ width:100%; }
+.story-skip{
+  position:absolute; top:28px; right:14px; z-index:5; font-family:'JetBrains Mono'; font-size:10.5px;
+  color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; background:rgba(0,0,0,.3);
+  padding:6px 12px; border-radius:100px; border:1px solid rgba(255,255,255,.08);
 }
-.flow-step{ position:relative; width:208px; flex:0 0 auto; text-align:center; padding:0 18px; scroll-snap-align:start; }
-.flow-node{
-  position:relative; z-index:2; width:56px; height:56px; border-radius:50%; margin:0 auto 20px;
-  border:1px solid var(--line); background:var(--surface);
-  display:flex; align-items:center; justify-content:center; font-size:20px;
-  transition:border-color .5s, box-shadow .5s, background .5s;
+.story-zone{ position:absolute; top:0; bottom:0; width:36%; z-index:4; cursor:pointer; }
+.story-left{ left:0; } .story-right{ right:0; }
+.story-content{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:60px 36px 40px; transition:opacity .3s;
 }
-.flow-step.on .flow-node{ border-color:var(--gold); box-shadow:0 0 22px rgba(201,162,39,.5); background:var(--surface-2); }
-.flow-step .num{ font-family:'JetBrains Mono'; font-size:10.5px; color:var(--gold); letter-spacing:.15em; display:block; margin-bottom:8px; }
-.flow-step h4{ font-family:'Michroma'; font-size:13px; letter-spacing:.03em; color:var(--text); line-height:1.35; }
-.flow-step p{ color:var(--text-faint); font-size:12.5px; margin-top:8px; line-height:1.55; }
-.flow-hint{
-  text-align:center; margin-top:8px; font-family:'JetBrains Mono'; font-size:11px; letter-spacing:.14em;
-  text-transform:uppercase; color:var(--text-faint); display:flex; align-items:center; justify-content:center; gap:10px;
+.story-content .node{
+  width:76px; height:76px; border-radius:50%; border:1px solid var(--gold-dim); background:var(--surface-2);
+  display:flex; align-items:center; justify-content:center; font-size:32px; margin-bottom:24px;
+  box-shadow:0 0 30px rgba(201,162,39,.25);
 }
-.flow-hint::before, .flow-hint::after{ content:'—'; color:var(--gold-dim); }
-@media(max-width:480px){
-  .flow-step{ width:172px; padding:0 12px; }
-  .flow-node{ width:48px; height:48px; font-size:17px; }
-  .flow-step h4{ font-size:12px; }
-  .flow-step p{ font-size:11.5px; }
-}
+.story-content .num{ font-family:'JetBrains Mono'; font-size:11px; color:var(--gold); letter-spacing:.18em; margin-bottom:10px; }
+.story-content h4{ font-family:'Michroma'; font-size:19px; color:var(--text); margin-bottom:14px; }
+.story-content p{ color:var(--text-dim); font-size:14px; line-height:1.7; max-width:300px; }
+.story-cta{ position:absolute; bottom:24px; left:0; right:0; z-index:5; display:flex; justify-content:center; }
+@media(max-width:480px){ .story-card{ height:380px; } .story-content h4{ font-size:17px; } }
 
 /* ===================== WIZARD ===================== */
 .wizard{ }
@@ -532,6 +525,75 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .event-card .rest{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
 .event-card p{ font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.6; }
 
+/* ===================== RESULTS PAGE ===================== */
+.results-overlay{
+  position:fixed; inset:0; z-index:800; background:var(--bg); display:none; overflow-y:auto;
+}
+.results-overlay.show{ display:block; animation:fadeInPage .3s var(--ease); }
+@keyframes fadeInPage{ from{ opacity:0; } to{ opacity:1; } }
+.results-page{ max-width:900px; margin:0 auto; padding:0 20px 30px; min-height:100vh; }
+.results-head{
+  position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:18px 0; background:var(--bg); border-bottom:1px solid var(--line);
+}
+.results-head h3{ font-size:16px; font-family:'Michroma'; }
+.rp-back{ width:38px; height:38px; border-radius:50%; border:1px solid var(--line); font-size:16px; color:var(--text-dim); flex-shrink:0; }
+.rp-filter{ padding:9px 16px; border-radius:100px; border:1px solid var(--gold-dim); color:var(--gold-hi); font-size:12px; white-space:nowrap; }
+.results-search{ margin-top:16px; }
+.results-search input{
+  width:100%; background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:13px 20px;
+  color:var(--text); font-size:14px; font-family:inherit;
+}
+.results-search input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
+.results-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:16px; margin-top:20px; }
+.results-grid .rest-mini{ width:100%; }
+.results-empty{ grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--text-faint); font-size:13px; }
+
+/* status tracker + reminder */
+#reminderBanner{
+  margin-top:18px; padding:16px 18px; border-radius:16px; background:rgba(201,162,39,.08); border:1px solid var(--gold-dim);
+}
+#reminderBanner .rb-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+#reminderBanner h4{ font-size:14px; color:var(--gold-hi); }
+#reminderBanner p{ font-size:12px; color:var(--text-dim); margin-top:6px; }
+#reminderBanner .cancel-btn{ padding:8px 16px; border-radius:100px; border:1px solid var(--nonveg); color:#e6968c; font-size:11px; white-space:nowrap; }
+#statusTracker{ margin-top:18px; }
+.track-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+.track-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.track-top b{ font-size:13.5px; }
+.track-status{ font-size:10.5px; font-family:'JetBrains Mono'; padding:4px 10px; border-radius:100px; white-space:nowrap; }
+.track-status.wait{ background:rgba(201,162,39,.15); color:var(--gold-hi); }
+.track-status.got{ background:rgba(76,154,91,.18); color:#8fd39c; }
+.track-status.confirmed{ background:rgba(76,154,91,.25); color:#8fd39c; }
+.track-status.declined{ background:rgba(120,120,120,.15); color:#9a9a9a; }
+.track-status.cancelled{ background:rgba(180,72,62,.15); color:#e6968c; }
+.track-actions{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.track-actions button{ padding:8px 14px; border-radius:100px; font-size:11px; }
+.track-actions .t-accept{ background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi)); color:#0b0904; font-weight:700; }
+.track-actions .t-bargain{ border:1px solid var(--gold-dim); color:var(--gold-hi); }
+.track-actions .t-decline{ border:1px solid var(--line); color:var(--text-faint); }
+
+/* ===================== FILTER DRAWER ===================== */
+.filter-overlay{ position:fixed; inset:0; z-index:900; background:rgba(4,3,2,.7); display:none; align-items:flex-end; justify-content:center; }
+.filter-overlay.show{ display:flex; }
+.filter-sheet{ width:100%; max-width:520px; max-height:80vh; background:var(--bg); border-radius:22px 22px 0 0; border:1px solid var(--line); overflow:hidden; display:flex; flex-direction:column; }
+.filter-head{ display:flex; justify-content:space-between; align-items:center; padding:20px 22px; border-bottom:1px solid var(--line); }
+.filter-head h3{ font-size:16px; }
+.filter-head button{ width:32px; height:32px; border-radius:50%; background:var(--surface); font-size:14px; color:var(--text-dim); }
+.filter-body{ display:flex; flex:1; min-height:280px; overflow:hidden; }
+.filter-tabs{ display:flex; flex-direction:column; width:120px; border-right:1px solid var(--line); flex-shrink:0; overflow-y:auto; }
+.ftab{ padding:16px 14px; text-align:left; font-size:12.5px; color:var(--text-faint); border-left:2px solid transparent; }
+.ftab.active{ color:var(--gold-hi); background:var(--surface); border-left-color:var(--gold); }
+.filter-panel{ flex:1; padding:18px; overflow-y:auto; }
+.filter-opt{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--text-dim); }
+.filter-opt:last-child{ border-bottom:none; }
+.filter-opt .radio{ width:18px; height:18px; border-radius:50%; border:1.5px solid var(--line); flex-shrink:0; position:relative; }
+.filter-opt.sel .radio{ border-color:var(--gold); }
+.filter-opt.sel .radio::after{ content:''; position:absolute; inset:3px; border-radius:50%; background:var(--gold); }
+.filter-opt.sel{ color:var(--text); }
+.filter-foot{ display:flex; gap:10px; padding:16px 22px; border-top:1px solid var(--line); }
+.filter-foot button{ flex:1; }
+
 /* ===================== OFFERS (customer inbox) ===================== */
 .offer-card{
   background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:16px;
@@ -682,7 +744,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   <div class="nav-links">
     <a href="#flow">How it works</a>
     <a href="#book">Book a table</a>
-    <a href="#restaurants">Restaurants</a>
+    <a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a>
     <a href="#offers">Offers</a>
     <a href="#favorites">Favorites</a>
     <a href="#events">Events</a>
@@ -701,7 +763,6 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   </div>
   <div class="eyebrow" style="justify-content:center;margin-top:8px;">RESERVATIONS, REIMAGINED</div>
   <h1>The Future of<br><span class="accent">Restaurant Bookings</span></h1>
-  <p class="lead">Name your table, your time, and your budget. Nearby restaurants compete with real discounts and perks to earn your visit — you just show up and enjoy.</p>
   <div class="hero-ctas">
     <a href="#book" class="btn-primary">Reserve a table →</a>
     <a href="#flow" class="btn-ghost">See how it works</a>
@@ -715,29 +776,24 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   <div class="hero-scroll"><span>Scroll</span><div class="line"></div></div>
 </header>
 
-<!-- FLOW -->
+<!-- FLOW (tap-through story) -->
 <section class="flow" id="flow">
   <div class="container">
     <div class="section-head reveal">
       <div class="eyebrow" style="justify-content:center">The journey</div>
-      <h2>From request to review</h2>
-      <p>Eight quiet steps stand between "I'm hungry" and a table with a discount already in hand.</p>
+      <h2>See how it works</h2>
+      <p>Eight quiet steps stand between "I'm hungry" and a table with a discount already in hand. Tap to move through them.</p>
     </div>
-    <div class="flow-scroll reveal" id="flowScroll">
-      <div class="flow-track">
-        <div class="flow-line-bg"></div>
-        <div class="flow-line-fill" id="flowFill"></div>
-        <div class="flow-step" data-i="0"><div class="flow-node">📤</div><span class="num">STEP 01</span><h4>Quote sent</h4><p>Your request reaches every matching restaurant nearby.</p></div>
-        <div class="flow-step" data-i="1"><div class="flow-node">💬</div><span class="num">STEP 02</span><h4>Restaurant responds</h4><p>An offer arrives — a discount, plus optional perks.</p></div>
-        <div class="flow-step" data-i="2"><div class="flow-node">✅</div><span class="num">STEP 03</span><h4>You accept</h4><p>Pick the best offer among your shortlisted restaurants.</p></div>
-        <div class="flow-step" data-i="3"><div class="flow-node">🔒</div><span class="num">STEP 04</span><h4>Pay 2% token</h4><p>A small token secures your table — fully adjusted later.</p></div>
-        <div class="flow-step" data-i="4"><div class="flow-node">📅</div><span class="num">STEP 05</span><h4>Booking confirmed</h4><p>Your slot is locked. No calls, no waiting at the door.</p></div>
-        <div class="flow-step" data-i="5"><div class="flow-node">🍽️</div><span class="num">STEP 06</span><h4>Visit the restaurant</h4><p>Arrive, be seated, enjoy the discount already agreed.</p></div>
-        <div class="flow-step" data-i="6"><div class="flow-node">🧾</div><span class="num">STEP 07</span><h4>Token adjusted</h4><p>Your token is deducted straight from the final bill.</p></div>
-        <div class="flow-step" data-i="7"><div class="flow-node">⭐</div><span class="num">STEP 08</span><h4>Review &amp; rating</h4><p>Rate the visit — it shapes offers for the next diner.</p></div>
+    <div class="story-card reveal" id="storyCard">
+      <div class="story-bar" id="storyBar"></div>
+      <button class="story-skip" id="storySkip">Skip →</button>
+      <div class="story-zone story-left" id="storyPrev"></div>
+      <div class="story-zone story-right" id="storyNext"></div>
+      <div class="story-content" id="storyContent"></div>
+      <div class="story-cta" id="storyCta" style="display:none;">
+        <button class="btn-primary" id="storyStartBooking" style="padding:14px 30px;">Start Booking →</button>
       </div>
     </div>
-    <div class="flow-hint">Swipe to explore</div>
   </div>
 </section>
 
@@ -766,22 +822,47 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   </div>
 </section>
 
-<!-- RESTAURANTS -->
-<section id="restaurants">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="eyebrow" style="justify-content:center">Nearby &amp; matching</div>
-      <h2>Restaurants for your request</h2>
-      <p>Only venues that can meet your preferences appear here — filtered automatically.</p>
+<!-- RESTAURANT RESULTS PAGE -->
+<div class="results-overlay" id="resultsOverlay">
+  <div class="results-page">
+    <div class="results-head">
+      <button class="rp-back" id="resultsBack">←</button>
+      <h3>Restaurants for you</h3>
+      <button class="rp-filter" id="openFilterBtn">⚙ Filter</button>
     </div>
-    <div class="rest-scroll-row reveal" id="restRow1"></div>
-    <div class="rest-scroll-row reveal" id="restRow2"></div>
-    <div class="send-request-bar reveal">
+    <div class="results-search">
+      <input type="text" id="resultsSearchInput" placeholder="Search restaurants or cuisine…">
+    </div>
+    <div id="reminderBanner" style="display:none;"></div>
+    <div id="statusTracker"></div>
+    <div class="results-grid" id="resultsGrid"></div>
+    <div class="send-request-bar reveal" style="position:sticky; bottom:0; margin-top:20px;">
       <div class="count">Selected: <b id="selCount">0</b> restaurants</div>
       <button class="btn-primary" id="sendReqBtn" style="padding:14px 30px;">Send Request →</button>
     </div>
   </div>
-</section>
+</div>
+
+<!-- FILTER DRAWER -->
+<div class="filter-overlay" id="filterOverlay">
+  <div class="filter-sheet">
+    <div class="filter-head"><h3>Filter</h3><button id="closeFilterBtn">✕</button></div>
+    <div class="filter-body">
+      <div class="filter-tabs" id="filterTabs">
+        <button class="ftab active" data-ftab="sort">Sort</button>
+        <button class="ftab" data-ftab="cuisine">Cuisine</button>
+        <button class="ftab" data-ftab="food">Food Type</button>
+        <button class="ftab" data-ftab="price">Price</button>
+        <button class="ftab" data-ftab="rating">Rating</button>
+      </div>
+      <div class="filter-panel" id="filterPanel"></div>
+    </div>
+    <div class="filter-foot">
+      <button class="wnav-btn back" id="clearFilterBtn">Clear all</button>
+      <button class="wnav-btn next" id="applyFilterBtn">Apply</button>
+    </div>
+  </div>
+</div>
 
 <!-- OFFERS -->
 <section id="offers" style="background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
@@ -911,7 +992,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <h3>DINEVO</h3>
     <p>The future of restaurant bookings — where restaurants compete for your table, not the other way around.</p>
     <div class="foot-links">
-      <a href="#flow">How it works</a><a href="#book">Book</a><a href="#restaurants">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a><a href="dashboard.html">For Restaurants</a>
+      <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a><a href="dashboard.html">For Restaurants</a>
     </div>
     <div class="foot-bottom">© 2026 DINEVO. Concept &amp; interface preview.</div>
   </div>
@@ -933,23 +1014,122 @@ window.addEventListener('load', ()=>{
   setTimeout(()=>document.getElementById('preloader').classList.add('hide'), 700);
 });
 
-/* ================= FLOW TIMELINE FILL ================= */
-const flowSteps = document.querySelectorAll('.flow-step');
-const flowFill = document.getElementById('flowFill');
-const flowScroll = document.getElementById('flowScroll');
-function updateFlow(){
-  if(!flowScroll) return;
-  const max = flowScroll.scrollWidth - flowScroll.clientWidth;
-  const progress = max > 0 ? flowScroll.scrollLeft / max : 0;
-  flowFill.style.width = (progress*100)+'%';
-  flowSteps.forEach((s,i)=>{
-    if(progress > i/(flowSteps.length-1) - 0.06) s.classList.add('on'); else s.classList.remove('on');
+/* ================= FLOW STORY (tap-through) ================= */
+const storySteps = [
+  {icon:'📤', title:'Quote sent', desc:'Your request reaches every matching restaurant nearby.'},
+  {icon:'💬', title:'Restaurant responds', desc:'An offer arrives — a discount, plus optional perks.'},
+  {icon:'✅', title:'You accept', desc:'Pick the best offer among your shortlisted restaurants.'},
+  {icon:'🔒', title:'Pay 2% token', desc:'A small token secures your table — fully adjusted later.'},
+  {icon:'📅', title:'Booking confirmed', desc:'Your slot is locked. No calls, no waiting at the door.'},
+  {icon:'🍽️', title:'Visit the restaurant', desc:'Arrive, be seated, enjoy the discount already agreed.'},
+  {icon:'🧾', title:'Token adjusted', desc:'Your token is deducted straight from the final bill.'},
+  {icon:'⭐', title:'Review & rating', desc:'Rate the visit — it shapes offers for the next diner.'}
+];
+let storyIndex = 0;
+const storyBar = document.getElementById('storyBar');
+const storyContent = document.getElementById('storyContent');
+const storyCta = document.getElementById('storyCta');
+if(storyBar){
+  storyBar.innerHTML = storySteps.map(()=>`<div class="seg"><i></i></div>`).join('');
+}
+function renderStory(){
+  const segs = storyBar.querySelectorAll('.seg');
+  segs.forEach((s,i)=>{
+    s.classList.toggle('done', i < storyIndex);
+    s.querySelector('i').style.width = i === storyIndex ? '0%' : (i < storyIndex ? '100%' : '0%');
+  });
+  const s = storySteps[storyIndex];
+  storyContent.style.opacity = 0;
+  setTimeout(()=>{
+    storyContent.innerHTML = `
+      <div class="node">${s.icon}</div>
+      <div class="num">STEP ${String(storyIndex+1).padStart(2,'0')} / ${storySteps.length}</div>
+      <h4>${s.title}</h4>
+      <p>${s.desc}</p>
+    `;
+    storyContent.style.opacity = 1;
+  }, 150);
+  storyCta.style.display = storyIndex === storySteps.length - 1 ? 'flex' : 'none';
+}
+if(storyContent){
+  renderStory();
+  document.getElementById('storyNext').onclick = ()=>{
+    if(storyIndex < storySteps.length - 1){ storyIndex++; renderStory(); }
+  };
+  document.getElementById('storyPrev').onclick = ()=>{
+    if(storyIndex > 0){ storyIndex--; renderStory(); }
+  };
+  document.getElementById('storySkip').onclick = ()=>{
+    document.getElementById('book').scrollIntoView({behavior:'smooth'});
+  };
+  document.getElementById('storyStartBooking').onclick = ()=>{
+    document.getElementById('book').scrollIntoView({behavior:'smooth'});
+  };
+}
+
+/* ================= RESULTS PAGE + FILTER DRAWER ================= */
+function openResultsPage(){
+  document.getElementById('resultsOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  buildRestaurants();
+  renderStatusTracker();
+}
+function closeResultsPage(){
+  document.getElementById('resultsOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+document.getElementById('resultsBack').onclick = closeResultsPage;
+document.getElementById('resultsSearchInput').addEventListener('input', (e)=>{
+  resultsState.search = e.target.value;
+  buildRestaurants();
+});
+
+const filterOptions = {
+  sort: [ ['relevance','Relevance'], ['price_low','Price (Low to High)'], ['price_high','Price (High to Low)'], ['rating','Rating (High to Low)'], ['discount','Discount (High to Low)'] ],
+  cuisine: [ ['','All cuisines'], ['North Indian','North Indian'], ['South Indian','South Indian'], ['Chinese','Chinese'], ['Italian','Italian'], ['BBQ','BBQ'], ['Cafe','Cafe'], ['Japanese','Japanese'], ['Mughlai','Mughlai'], ['Vegan','Vegan'] ],
+  food: [ ['','Any'], ['veg','Veg Only'], ['nonveg','Non-Veg Only'], ['pureveg','Pure Veg'], ['jain','Jain'], ['vegan','Vegan'] ],
+  price: [ ['','Any budget'], ['low','Under ₹1,000'], ['mid','₹1,000 – ₹2,000'], ['high','Above ₹2,000'] ],
+  rating: [ ['','Any rating'], ['4.5','4.5★ & above'], ['4.0','4.0★ & above'] ]
+};
+const filterKeyMap = { sort:'sort', cuisine:'cuisine', food:'foodFilter', price:'price', rating:'rating' };
+let activeFTab = 'sort';
+function renderFilterPanel(){
+  const panel = document.getElementById('filterPanel');
+  const opts = filterOptions[activeFTab];
+  const stateKey = filterKeyMap[activeFTab];
+  panel.innerHTML = opts.map(([val,label])=>`
+    <div class="filter-opt ${resultsState[stateKey]===val?'sel':''}" data-val="${val}"><div class="radio"></div>${label}</div>
+  `).join('');
+  panel.querySelectorAll('.filter-opt').forEach(el=>{
+    el.onclick = ()=>{
+      resultsState[stateKey] = el.dataset.val;
+      renderFilterPanel();
+    };
   });
 }
-if(flowScroll){
-  flowScroll.addEventListener('scroll', updateFlow, {passive:true});
-  updateFlow();
-}
+document.getElementById('openFilterBtn').onclick = ()=>{
+  document.getElementById('filterOverlay').classList.add('show');
+  renderFilterPanel();
+};
+document.getElementById('closeFilterBtn').onclick = ()=> document.getElementById('filterOverlay').classList.remove('show');
+document.getElementById('filterOverlay').onclick = (e)=>{ if(e.target.id === 'filterOverlay') document.getElementById('filterOverlay').classList.remove('show'); };
+document.getElementById('filterTabs').querySelectorAll('.ftab').forEach(t=>{
+  t.onclick = ()=>{
+    activeFTab = t.dataset.ftab;
+    document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    renderFilterPanel();
+  };
+});
+document.getElementById('applyFilterBtn').onclick = ()=>{
+  document.getElementById('filterOverlay').classList.remove('show');
+  buildRestaurants();
+};
+document.getElementById('clearFilterBtn').onclick = ()=>{
+  resultsState.sort=''; resultsState.cuisine=''; resultsState.foodFilter=''; resultsState.price=''; resultsState.rating='';
+  renderFilterPanel();
+  buildRestaurants();
+};
 
 /* ================= WIZARD ================= */
 const state = {
@@ -1113,7 +1293,7 @@ function wireStep(){
 
 document.getElementById('nextBtn').onclick = ()=>{
   if(current < steps.length-1){ current++; renderStep(); }
-  else{ document.getElementById('restaurants').scrollIntoView({behavior:'smooth'}); buildRestaurants(); }
+  else{ openResultsPage(); }
 };
 document.getElementById('backBtn').onclick = ()=>{ if(current>0){ current--; renderStep(); } };
 
@@ -1259,16 +1439,50 @@ function wireCardButtons(scope){
   });
 }
 
+/* ================= RESULTS PAGE: search, sort, filter ================= */
+const resultsState = { search:'', sort:'relevance', cuisine:'', foodFilter:'', price:'', rating:'' };
+
 function buildRestaurants(){
-  const filtered = restaurantData.filter(matchesFilter);
-  const list = filtered.length ? filtered : restaurantData;
-  const mid = Math.ceil(list.length/2);
-  const row1 = list.slice(0, mid);
-  const row2 = list.slice(mid);
-  document.getElementById('restRow1').innerHTML = row1.map((r,i)=>miniCard(r,i)).join('');
-  document.getElementById('restRow2').innerHTML = row2.map((r,i)=>miniCard(r,i)).join('');
-  wireCardButtons(document.getElementById('restRow1'));
-  wireCardButtons(document.getElementById('restRow2'));
+  let list = restaurantData.filter(matchesFilter);
+  if(resultsState.search.trim()){
+    const q = resultsState.search.trim().toLowerCase();
+    list = list.filter(r => r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q));
+  }
+  if(resultsState.cuisine) list = list.filter(r => r.cuisine.includes(resultsState.cuisine));
+  if(resultsState.foodFilter){
+    if(resultsState.foodFilter==='veg') list = list.filter(r => r.type==='veg'||r.type==='pureveg'||r.type==='both');
+    if(resultsState.foodFilter==='nonveg') list = list.filter(r => r.type==='nonveg'||r.type==='both');
+    if(resultsState.foodFilter==='pureveg') list = list.filter(r => r.type==='pureveg');
+    if(resultsState.foodFilter==='jain') list = list.filter(r => r.type==='jain');
+    if(resultsState.foodFilter==='vegan') list = list.filter(r => r.type==='vegan');
+  }
+  if(resultsState.price){
+    list = list.filter(r=>{
+      const c = parseInt(String(r.cost).replace(/[^0-9]/g,'')) || 0;
+      if(resultsState.price==='low') return c < 1000;
+      if(resultsState.price==='mid') return c >= 1000 && c <= 2000;
+      if(resultsState.price==='high') return c > 2000;
+      return true;
+    });
+  }
+  if(resultsState.rating) list = list.filter(r => r.rating >= parseFloat(resultsState.rating));
+
+  if(resultsState.sort === 'price_low') list = [...list].sort((a,b)=> (parseInt(String(a.cost).replace(/[^0-9]/g,''))||0) - (parseInt(String(b.cost).replace(/[^0-9]/g,''))||0));
+  if(resultsState.sort === 'price_high') list = [...list].sort((a,b)=> (parseInt(String(b.cost).replace(/[^0-9]/g,''))||0) - (parseInt(String(a.cost).replace(/[^0-9]/g,''))||0));
+  if(resultsState.sort === 'rating') list = [...list].sort((a,b)=> b.rating - a.rating);
+  if(resultsState.sort === 'discount'){
+    const pct = s => parseInt(String(s).match(/\d+/g)?.pop() || 0);
+    list = [...list].sort((a,b)=> pct(b.disc) - pct(a.disc));
+  }
+
+  const grid = document.getElementById('resultsGrid');
+  if(!grid) return;
+  if(list.length === 0){
+    grid.innerHTML = `<div class="results-empty">No restaurants match your search/filters — try adjusting them.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map((r,i)=>miniCard(r,i)).join('');
+  wireCardButtons(grid);
 }
 buildRestaurants();
 renderFavorites();
@@ -1426,19 +1640,98 @@ async function pushRequestsToStorage(){
   }catch(e){ console.error('Network error sending request:', e); }
 }
 
+let trackedRests = new Set();
+try{ trackedRests = new Set(JSON.parse(localStorage.getItem('dinevoTrackedRests') || '[]')); }catch(e){ trackedRests = new Set(); }
+function saveTrackedRests(){ localStorage.setItem('dinevoTrackedRests', JSON.stringify([...trackedRests])); }
+
 document.getElementById('sendReqBtn').onclick = async ()=>{
   const btn = document.getElementById('sendReqBtn');
   const n = selectedRests.size;
   if(n > 0){
     btn.textContent = 'Sending…';
     await pushRequestsToStorage();
+    selectedRests.forEach(name => trackedRests.add(name));
+    saveTrackedRests();
     btn.textContent = `Request sent to ${n} restaurant${n>1?'s':''} ✓`;
-    setTimeout(()=>{ document.getElementById('offers').scrollIntoView({behavior:'smooth'}); }, 900);
+    renderStatusTracker();
+    setTimeout(()=>{ document.getElementById('statusTracker').scrollIntoView({behavior:'smooth', block:'start'}); }, 500);
   } else {
     btn.textContent = 'Select at least one restaurant';
   }
   setTimeout(()=>{ btn.textContent = 'Send Request →'; }, 2400);
 };
+
+/* ================= STATUS TRACKER + REMINDER + CANCEL ================= */
+async function renderStatusTracker(){
+  const box = document.getElementById('statusTracker');
+  const banner = document.getElementById('reminderBanner');
+  if(!box) return;
+  if(trackedRests.size === 0){ box.innerHTML = ''; banner.style.display = 'none'; return; }
+
+  const offers = await readOffers();
+  const relevant = offers.filter(o => trackedRests.has(o.restaurant));
+
+  const confirmed = relevant.find(o => o.status === 'confirmed');
+  if(confirmed){
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="rb-top">
+        <div><h4>📅 You have a booking at ${confirmed.restaurant}</h4><p>${confirmed.guests} · ${confirmed.meal} · ${confirmed.discount} off</p></div>
+        <button class="cancel-btn" id="cancelBookingBtn">Cancel Booking</button>
+      </div>`;
+    document.getElementById('cancelBookingBtn').onclick = ()=> cancelBooking(confirmed.id, confirmed.restaurant);
+  } else {
+    banner.style.display = 'none';
+  }
+
+  box.innerHTML = [...trackedRests].map(name=>{
+    const o = relevant.find(x => x.restaurant === name);
+    if(!o){
+      return `<div class="track-card"><div class="track-top"><b>${name}</b><span class="track-status wait">Awaiting response</span></div></div>`;
+    }
+    if(o.status === 'confirmed'){
+      return `<div class="track-card"><div class="track-top"><b>${name}</b><span class="track-status confirmed">✓ Confirmed</span></div></div>`;
+    }
+    if(o.status === 'declined'){
+      return `<div class="track-card" style="opacity:.55;"><div class="track-top"><b>${name}</b><span class="track-status declined">You declined</span></div></div>`;
+    }
+    if(o.status === 'cancelled_by_customer'){
+      return `<div class="track-card" style="opacity:.55;"><div class="track-top"><b>${name}</b><span class="track-status cancelled">Cancelled by you</span></div></div>`;
+    }
+    const counter = o.counter;
+    let note = '';
+    if(counter && counter.status==='pending') note = `<div class="offer-note wait" style="margin-top:10px;">Waiting on ${name} to respond to your counter of ${counter.percent}…</div>`;
+    else if(counter && counter.status==='accepted') note = `<div class="offer-note win" style="margin-top:10px;">🎉 ${name} agreed to ${counter.percent}!</div>`;
+    else if(counter && counter.status==='rejected') note = `<div class="offer-note lose" style="margin-top:10px;">${name} kept their offer of ${o.discount}.</div>`;
+    const locked = counter && counter.status === 'pending';
+    return `<div class="track-card">
+      <div class="track-top"><b>${name}</b><span class="track-status got">${o.discount} off — respond</span></div>
+      ${note}
+      <div class="track-actions">
+        <button class="t-accept" ${locked?'disabled style="opacity:.4;"':''} onclick='openPayment(${JSON.stringify(o)})'>🔒 Accept &amp; Pay 2%</button>
+        <button class="t-bargain" ${locked?'disabled style="opacity:.4;"':''} onclick="trackerBargain('${o.id}', ${parseInt(o.discount)||15})">🤝 Bargain</button>
+        <button class="t-decline" onclick="updateOfferStatus('${o.id}','declined').then(renderStatusTracker)">Decline</button>
+      </div>
+      <div id="trackerBargain-${o.id}" style="display:none; margin-top:12px;">
+        <div class="bargain-chips">
+          ${[5,10,15].map(add=>`<div class="chip" onclick="sendCounterOffer('${o.id}','${(parseInt(o.discount)||15)+add}%').then(renderStatusTracker)">${(parseInt(o.discount)||15)+add}%</div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function trackerBargain(id, base){
+  const el = document.getElementById('trackerBargain-'+id);
+  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+async function cancelBooking(offerId, restaurant){
+  if(!confirm(`Cancel your booking at ${restaurant}? The restaurant will be notified.`)) return;
+  await updateOfferStatus(offerId, 'cancelled_by_customer');
+  trackedRests.delete(restaurant);
+  saveTrackedRests();
+  showToast(`Booking cancelled — ${restaurant} has been notified.`, '🚫');
+  renderStatusTracker();
+}
 
 /* ================= OFFERS INBOX (customer side) ================= */
 async function readOffers(){
@@ -1615,13 +1908,14 @@ async function sendCounterOffer(id, percent){
 }
 dinevoAuth.ready.then(()=>{
   renderOffers();
+  renderStatusTracker();
   try{
     sb.channel('offers-live-customer')
-      .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _offersSig = null; renderOffers(); })
+      .on('postgres_changes', { event:'*', schema:'public', table:'offers' }, ()=>{ _offersSig = null; renderOffers(); renderStatusTracker(); })
       .subscribe();
   }catch(e){ console.error('Realtime subscribe failed:', e); }
-  window.addEventListener('focus', renderOffers);
-  setInterval(renderOffers, 6000);
+  window.addEventListener('focus', ()=>{ renderOffers(); renderStatusTracker(); });
+  setInterval(()=>{ renderOffers(); renderStatusTracker(); }, 6000);
 });
 
 /* ================= DISH MARQUEE ================= */
