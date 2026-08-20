@@ -814,6 +814,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
         <p id="stepSub">Share your location so we can find tables nearby.</p>
       </div>
       <div class="step-body" id="stepBody"></div>
+      <div id="stepError" style="display:none; margin-top:14px; padding:11px 16px; border-radius:10px; background:rgba(180,72,62,.1); border:1px solid var(--nonveg); color:#e6968c; font-size:12.5px;"></div>
       <div class="wizard-nav">
         <button class="wnav-btn back" id="backBtn">← Back</button>
         <button class="wnav-btn next" id="nextBtn">Continue →</button>
@@ -1173,6 +1174,19 @@ const steps = [
         <input type="time" id="timeSlot" value="20:30" />
       </div>`;
       setTimeout(()=>{
+        const todayD = new Date();
+        const maxD = new Date(); maxD.setDate(maxD.getDate()+7);
+        const toISO = d => d.toISOString().split('T')[0];
+        const dateEl = document.getElementById('customDate');
+        dateEl.min = toISO(todayD);
+        dateEl.max = toISO(maxD);
+        if(state.customDateValue) dateEl.value = state.customDateValue;
+        dateEl.oninput = (e)=>{
+          const val = e.target.value;
+          if(val < toISO(todayD)){ e.target.value = toISO(todayD); }
+          if(val > toISO(maxD)){ e.target.value = toISO(maxD); }
+          state.customDateValue = e.target.value;
+        };
         document.getElementById('timeSlot').oninput = (e)=> state.time = e.target.value;
       },0);
     }},
@@ -1216,7 +1230,7 @@ const steps = [
       body.innerHTML = `<div class="bill-grid">
         ${billOpt('₹500')}${billOpt('₹1,000')}${billOpt('₹2,500')}${billOpt('₹5,000')}${billOpt('Custom')}
       </div>
-      <input type="text" id="customBill" placeholder="Enter custom amount ₹" style="margin-top:16px; width:100%; display:none;" />`;
+      <input type="text" id="customBill" inputmode="numeric" placeholder="Enter custom amount ₹" style="margin-top:16px; width:100%; display:none;" />`;
     }}
 ];
 
@@ -1248,6 +1262,8 @@ function renderStep(){
   steps[current].render(bodyEl);
   renderDots();
   wireStep();
+  const errEl = document.getElementById('stepError');
+  if(errEl){ errEl.style.display = 'none'; errEl.textContent = ''; }
   document.getElementById('backBtn').disabled = current===0;
   document.getElementById('nextBtn').textContent = current===steps.length-1 ? 'View Restaurants →' : 'Continue →';
 }
@@ -1280,7 +1296,10 @@ function wireStep(){
   const customBillEl = document.getElementById('customBill');
   if(customBillEl){
     customBillEl.value = state.customBillValue || '';
-    customBillEl.oninput = (e)=> state.customBillValue = e.target.value;
+    customBillEl.oninput = (e)=>{
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      state.customBillValue = e.target.value;
+    };
   }
   bodyEl.querySelectorAll('.counter button').forEach(btn=>{
     btn.onclick = ()=>{
@@ -1291,11 +1310,51 @@ function wireStep(){
   });
 }
 
+function validateStep(idx){
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const maxD = new Date(); maxD.setDate(maxD.getDate()+7); maxD.setHours(23,59,59,999);
+  switch(idx){
+    case 0: if(!state.location) return 'Please choose a location option.'; break;
+    case 1: if(!state.distance) return 'Please select a search distance.'; break;
+    case 2: if(!state.meal) return 'Please select a meal.'; break;
+    case 3:
+      if(!state.date) return 'Please choose a date option.';
+      if(state.date === 'Custom'){
+        if(!state.customDateValue) return 'Please pick a specific date.';
+        const picked = new Date(state.customDateValue + 'T00:00:00');
+        if(picked < todayD) return 'That date has already passed — please pick a future date.';
+        if(picked > maxD) return 'Bookings can only be made up to 7 days in advance.';
+      }
+      if(!state.time) return 'Please choose a time.';
+      break;
+    case 4: if(state.adults < 1) return 'At least 1 adult guest is required.'; break;
+    case 5: if(!state.foodType) return 'Please select a food preference.'; break;
+    case 6: break; // cuisine is optional
+    case 7:
+      if(!state.bill) return 'Please select an expected bill.';
+      if(state.bill === 'Custom'){
+        const n = parseInt(state.customBillValue, 10);
+        if(!state.customBillValue || isNaN(n) || n <= 0) return 'Please enter a valid amount in numbers only (₹).';
+      }
+      break;
+  }
+  return null;
+}
+function showStepError(msg){
+  const el = document.getElementById('stepError');
+  if(!msg){ el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
 document.getElementById('nextBtn').onclick = ()=>{
+  const err = validateStep(current);
+  if(err){ showStepError(err); return; }
+  showStepError(null);
   if(current < steps.length-1){ current++; renderStep(); }
   else{ openResultsPage(); }
 };
-document.getElementById('backBtn').onclick = ()=>{ if(current>0){ current--; renderStep(); } };
+document.getElementById('backBtn').onclick = ()=>{ showStepError(null); if(current>0){ current--; renderStep(); } };
 
 renderStep();
 
@@ -1401,6 +1460,7 @@ function tagFor(type){
 function miniCard(r, i){
   const t = tagFor(r.type);
   const isFav = favorites.has(r.name);
+  const isSel = selectedRests.has(r.name);
   return `<div class="rest-mini reveal in" style="transition-delay:${i*40}ms" data-open="${r.name}">
     <div class="rest-mini-media" style="background:${r.bgc};">
       <span class="tag-mini ${t.c==='veg'?'veg':t.c==='nonveg'?'nonveg':'both'}" style="background:${t.c==='veg'?'rgba(76,154,91,.25)':t.c==='nonveg'?'rgba(180,72,62,.25)':'rgba(217,138,52,.25)'}; color:${t.c==='veg'?'#8fd39c':t.c==='nonveg'?'#e6968c':'#f0b876'};">${t.l}</span>
@@ -1415,7 +1475,7 @@ function miniCard(r, i){
       <div class="rest-mini-disc">🏷 ${r.disc.replace('Usually offers ','')}</div>
       <div class="rest-mini-foot">
         <div class="cost">${r.cost}</div>
-        <button class="select-btn-sm" data-name="${r.name}">Select</button>
+        <button class="select-btn-sm ${isSel?'sel':''}" data-name="${r.name}">${isSel?'✓ Added':'Select'}</button>
       </div>
     </div>
   </div>`;
@@ -1483,6 +1543,8 @@ function buildRestaurants(){
   }
   grid.innerHTML = list.map((r,i)=>miniCard(r,i)).join('');
   wireCardButtons(grid);
+  const selCountEl = document.getElementById('selCount');
+  if(selCountEl) selCountEl.textContent = selectedRests.size;
 }
 buildRestaurants();
 renderFavorites();
