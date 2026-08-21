@@ -745,7 +745,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <a href="#flow">How it works</a>
     <a href="#book">Book a table</a>
     <a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a>
-    <a href="#offers">Offers</a>
+    <a href="javascript:void(0)" onclick="openUserProfilePage()">My Bookings</a>
     <a href="#favorites">Favorites</a>
     <a href="#events">Events</a>
     <a href="#dishes">Cuisine</a>
@@ -865,17 +865,34 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   </div>
 </div>
 
-<!-- OFFERS -->
-<section id="offers" style="background:var(--bg-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="eyebrow" style="justify-content:center">Your inbox</div>
-      <h2>Offers for you</h2>
-      <p>When a restaurant responds to your request, it shows up here — accept, negotiate, or decline.</p>
+<!-- USER PROFILE PAGE -->
+<div class="results-overlay" id="userProfileOverlay">
+  <div class="results-page">
+    <div class="results-head">
+      <button class="rp-back" id="userProfileClose">←</button>
+      <h3>Your Profile</h3>
+      <div style="width:38px;"></div>
     </div>
-    <div id="offersList" style="max-width:640px; margin:0 auto;"></div>
+    <div style="display:flex; align-items:center; gap:16px; margin-top:26px;">
+      <div id="upAvatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#0b0904;flex-shrink:0;"></div>
+      <div style="min-width:0;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h2 id="upName" style="font-size:18px; font-family:'Manrope'; font-weight:800;"></h2>
+          <button id="upEditName" style="font-size:10.5px;color:var(--gold-hi);border:1px solid var(--gold-dim);border-radius:100px;padding:4px 10px; white-space:nowrap;">Edit</button>
+        </div>
+        <p id="upEmail" style="color:var(--text-faint); font-size:12px; margin-top:4px; word-break:break-all;"></p>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:22px;">
+      <button class="btn-ghost" id="upFavBtn" style="flex:1; padding:12px;">♥ Favorites</button>
+      <button class="btn-ghost" id="upSignOutBtn" style="flex:1; padding:12px;">Sign out</button>
+    </div>
+    <div class="profile-tabs" style="margin-top:28px;">
+      <div class="ptab active">Your Bookings</div>
+    </div>
+    <div id="offersList" style="margin-top:20px;"></div>
   </div>
-</section>
+</div>
 
 <!-- FAVORITES -->
 <section id="favorites">
@@ -1978,7 +1995,51 @@ dinevoAuth.ready.then(()=>{
   }catch(e){ console.error('Realtime subscribe failed:', e); }
   window.addEventListener('focus', ()=>{ renderOffers(); renderStatusTracker(); });
   setInterval(()=>{ renderOffers(); renderStatusTracker(); }, 6000);
+
+  dinevoAuth.onProfileClick(openUserProfilePage);
 });
+
+/* ================= USER PROFILE PAGE ================= */
+function refreshProfileHeader(){
+  const user = dinevoAuth.getUser();
+  if(!user) return;
+  const meta = user.user_metadata || {};
+  const name = meta.display_name || (user.email||'').split('@')[0];
+  document.getElementById('upAvatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('upName').textContent = name;
+  document.getElementById('upEmail').textContent = user.email;
+}
+function openUserProfilePage(){
+  refreshProfileHeader();
+  document.getElementById('userProfileOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  _offersSig = null;
+  renderOffers();
+}
+function closeUserProfilePage(){
+  document.getElementById('userProfileOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+document.getElementById('userProfileClose').onclick = closeUserProfilePage;
+document.getElementById('upFavBtn').onclick = ()=>{
+  closeUserProfilePage();
+  setTimeout(()=> document.getElementById('favorites').scrollIntoView({behavior:'smooth'}), 200);
+};
+document.getElementById('upSignOutBtn').onclick = async ()=>{
+  await sb.auth.signOut();
+  localStorage.removeItem('dinevoFaceCred');
+  location.reload();
+};
+document.getElementById('upEditName').onclick = async ()=>{
+  const cur = document.getElementById('upName').textContent;
+  const n = prompt('Enter your name', cur);
+  if(n && n.trim()){
+    try{
+      await sb.auth.updateUser({ data: { display_name: n.trim() } });
+      refreshProfileHeader();
+    }catch(e){ alert('Could not update name.'); }
+  }
+};
 
 /* ================= DISH MARQUEE ================= */
 const dishes = [

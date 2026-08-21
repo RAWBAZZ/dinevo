@@ -30,9 +30,14 @@ window.dinevoAuth = (function(){
       #authGate .authHint{font-size:10.5px;color:#6b6858;margin-top:-6px;margin-bottom:14px;max-width:320px;}
       #authGate .linklike{background:none!important;border:none!important;width:auto!important;padding:0!important;color:#9a9686!important;font-size:11.5px!important;text-decoration:underline;text-transform:none!important;font-weight:400!important;letter-spacing:0!important;margin-top:14px!important;cursor:pointer;}
       #authGate .backlink{background:none!important;border:none!important;width:auto!important;padding:0!important;color:#9a9686!important;font-size:11.5px!important;text-decoration:underline;text-transform:none!important;font-weight:400!important;letter-spacing:0!important;margin-bottom:16px!important;}
-      #authTopbar{position:fixed;top:14px;right:14px;z-index:1500;padding:8px 8px 8px 16px;font-size:10.5px;color:#9a9686;display:flex;align-items:center;gap:10px;background:rgba(8,7,5,.85);backdrop-filter:blur(8px);border:1px solid #2a251a;border-radius:100px;font-family:'JetBrains Mono',monospace;}
-      #authTopbar button{background:none;border:1px solid #2a251a;color:#9a9686;border-radius:100px;padding:6px 13px;font-size:10px;cursor:pointer;font-family:inherit;}
-      #authTopbar span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      #authAvatarWrap{position:fixed;top:78px;right:16px;z-index:1500;font-family:'Manrope',sans-serif;}
+      #authAvatarBtn{width:38px;height:38px;border-radius:50%;background:linear-gradient(120deg,#8a6f22,#f1d68c);color:#0b0904;font-weight:800;font-size:14px;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45);}
+      #authDropdown{position:absolute;top:46px;right:0;width:210px;background:#15130d;border:1px solid #2a251a;border-radius:14px;padding:10px;display:none;flex-direction:column;gap:6px;box-shadow:0 20px 44px rgba(0,0,0,.55);}
+      #authDropdown.show{display:flex;}
+      #authDropdown .ad-email{font-size:10.5px;color:#9a9686;padding:6px 8px 10px;border-bottom:1px solid #2a251a;margin-bottom:2px;word-break:break-all;}
+      #authDropdown button{background:none;border:1px solid #2a251a;color:#eae6da;border-radius:100px;padding:9px 12px;font-size:12px;text-align:left;cursor:pointer;font-family:inherit;}
+      #authDropdown button:hover{border-color:#8a6f22;color:#f1d68c;}
+      @media(max-width:480px){ #authAvatarWrap{ top:72px; } }
     `;
     document.head.appendChild(style);
   }
@@ -170,11 +175,37 @@ window.dinevoAuth = (function(){
     };
   }
 
+  let profileClickHandler = null;
+  function onProfileClick(fn){
+    profileClickHandler = fn;
+    const existingBtn = document.getElementById('authProfileBtn');
+    if(existingBtn) existingBtn.style.display = 'block';
+  }
+
   function showTopbar(email){
     injectStyles();
-    if(document.getElementById('authTopbar')) return;
-    const bar = el(`<div id="authTopbar"><span>${email}</span><button id="authSignOut">Sign out</button></div>`);
-    document.body.appendChild(bar);
+    if(document.getElementById('authAvatarWrap')) return;
+    const initial = (email || '?').charAt(0).toUpperCase();
+    const wrap = el(`<div id="authAvatarWrap">
+      <button id="authAvatarBtn">${initial}</button>
+      <div id="authDropdown">
+        <div class="ad-email">${email}</div>
+        <button id="authProfileBtn" style="display:${profileClickHandler ? 'block' : 'none'};">👤 Profile</button>
+        <button id="authSignOut">Sign out</button>
+      </div>
+    </div>`);
+    document.body.appendChild(wrap);
+    document.getElementById('authAvatarBtn').onclick = (e)=>{
+      e.stopPropagation();
+      document.getElementById('authDropdown').classList.toggle('show');
+    };
+    document.addEventListener('click', (e)=>{
+      if(!wrap.contains(e.target)) document.getElementById('authDropdown').classList.remove('show');
+    });
+    document.getElementById('authProfileBtn').onclick = ()=>{
+      document.getElementById('authDropdown').classList.remove('show');
+      if(profileClickHandler) profileClickHandler();
+    };
     document.getElementById('authSignOut').onclick = async ()=>{
       await sb.auth.signOut();
       localStorage.removeItem('dinevoFaceCred');
@@ -272,5 +303,5 @@ window.dinevoAuth = (function(){
     });
   }
 
-  return { init, ready, getUser: ()=> currentUser };
+  return { init, ready, getUser: ()=> currentUser, onProfileClick };
 })();
