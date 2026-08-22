@@ -525,6 +525,34 @@ input:focus{ outline:2px solid var(--gold-dim); outline-offset:2px; }
 .event-card .rest{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
 .event-card p{ font-size:12.5px; color:var(--text-dim); margin-top:10px; line-height:1.6; }
 
+/* ===================== PROFILE PAGE (Zomato-style) ===================== */
+.profile-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:22px;
+}
+.profile-avatar{
+  width:64px; height:64px; border-radius:50%; background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi));
+  display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; color:#0b0904; flex-shrink:0;
+}
+.profile-name{ font-size:18px; font-family:'Manrope'; font-weight:800; }
+.profile-email{ color:var(--text-faint); font-size:12px; margin-top:4px; word-break:break-all; }
+.profile-edit-link{ color:var(--gold-hi); font-size:12px; margin-top:8px; }
+.profile-group{
+  background:var(--surface); border:1px solid var(--line); border-radius:16px; margin-top:16px; overflow:hidden;
+}
+.profile-row{ display:flex; align-items:center; gap:14px; padding:18px 18px; cursor:pointer; transition:background .2s; }
+.profile-row:active{ background:var(--surface-2); }
+.profile-row .pr-ic{ font-size:19px; width:26px; text-align:center; flex-shrink:0; }
+.profile-row .pr-text{ flex:1; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.profile-row .pr-text b{ font-size:14px; font-weight:700; }
+.profile-row .pr-text span{ font-size:11.5px; color:var(--text-faint); }
+.profile-row .pr-chev{ font-size:20px; color:var(--text-faint); transition:transform .3s var(--ease); flex-shrink:0; }
+.profile-row.open .pr-chev{ transform:rotate(90deg); color:var(--gold-hi); }
+.profile-expand{
+  max-height:0; overflow:hidden; transition:max-height .4s var(--ease); border-top:1px solid var(--line);
+}
+.profile-expand.open{ max-height:4000px; }
+.profile-expand > div{ padding:18px; }
+
 /* ===================== RESULTS PAGE ===================== */
 .results-overlay{
   position:fixed; inset:0; z-index:800; background:var(--bg); display:none; overflow-y:auto;
@@ -873,24 +901,45 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
       <h3>Your Profile</h3>
       <div style="width:38px;"></div>
     </div>
-    <div style="display:flex; align-items:center; gap:16px; margin-top:26px;">
-      <div id="upAvatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(120deg,var(--gold-dim),var(--gold-hi));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#0b0904;flex-shrink:0;"></div>
-      <div style="min-width:0;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <h2 id="upName" style="font-size:18px; font-family:'Manrope'; font-weight:800;"></h2>
-          <button id="upEditName" style="font-size:10.5px;color:var(--gold-hi);border:1px solid var(--gold-dim);border-radius:100px;padding:4px 10px; white-space:nowrap;">Edit</button>
+    <div class="profile-card">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div id="upAvatar" class="profile-avatar"></div>
+        <div style="min-width:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h2 id="upName" class="profile-name"></h2>
+          </div>
+          <p id="upEmail" class="profile-email"></p>
+          <button id="upEditName" class="profile-edit-link">Edit profile ›</button>
         </div>
-        <p id="upEmail" style="color:var(--text-faint); font-size:12px; margin-top:4px; word-break:break-all;"></p>
       </div>
     </div>
-    <div style="display:flex; gap:10px; margin-top:22px;">
-      <button class="btn-ghost" id="upFavBtn" style="flex:1; padding:12px;">♥ Favorites</button>
-      <button class="btn-ghost" id="upSignOutBtn" style="flex:1; padding:12px;">Sign out</button>
+
+    <div class="profile-group">
+      <div class="profile-row" id="bookingsRow">
+        <span class="pr-ic">🍽️</span>
+        <div class="pr-text"><b>Your Bookings</b><span id="bookingsSummary">Tap to view your dining history</span></div>
+        <span class="pr-chev" id="bookingsChevron">›</span>
+      </div>
+      <div id="bookingsHistoryPanel" class="profile-expand">
+        <div id="offersList"></div>
+      </div>
     </div>
-    <div class="profile-tabs" style="margin-top:28px;">
-      <div class="ptab active">Your Bookings</div>
+
+    <div class="profile-group">
+      <div class="profile-row" id="favProfileRow">
+        <span class="pr-ic">♥</span>
+        <div class="pr-text"><b>Your Favorites</b><span>Restaurants you've saved</span></div>
+        <span class="pr-chev">›</span>
+      </div>
     </div>
-    <div id="offersList" style="margin-top:20px;"></div>
+
+    <div class="profile-group">
+      <div class="profile-row" id="signOutRow">
+        <span class="pr-ic">⏻</span>
+        <div class="pr-text"><b>Sign out</b><span>You'll need to log in again next time</span></div>
+        <span class="pr-chev">›</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2013,19 +2062,38 @@ function openUserProfilePage(){
   refreshProfileHeader();
   document.getElementById('userProfileOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
+  document.getElementById('bookingsRow').classList.remove('open');
+  document.getElementById('bookingsHistoryPanel').classList.remove('open');
   _offersSig = null;
   renderOffers();
+  updateBookingsSummary();
 }
 function closeUserProfilePage(){
   document.getElementById('userProfileOverlay').classList.remove('show');
   document.body.style.overflow = '';
 }
+async function updateBookingsSummary(){
+  const el = document.getElementById('bookingsSummary');
+  if(!el) return;
+  try{
+    const offers = await readOffers();
+    el.textContent = offers.length ? `${offers.length} booking${offers.length>1?'s':''} · Tap to view` : 'Tap to view your dining history';
+  }catch(e){ /* keep default text */ }
+}
 document.getElementById('userProfileClose').onclick = closeUserProfilePage;
-document.getElementById('upFavBtn').onclick = ()=>{
+document.getElementById('bookingsRow').onclick = ()=>{
+  const row = document.getElementById('bookingsRow');
+  const panel = document.getElementById('bookingsHistoryPanel');
+  const isOpen = panel.classList.toggle('open');
+  row.classList.toggle('open', isOpen);
+  if(isOpen){ _offersSig = null; renderOffers(); }
+};
+document.getElementById('favProfileRow').onclick = ()=>{
   closeUserProfilePage();
   setTimeout(()=> document.getElementById('favorites').scrollIntoView({behavior:'smooth'}), 200);
 };
-document.getElementById('upSignOutBtn').onclick = async ()=>{
+document.getElementById('signOutRow').onclick = async ()=>{
+  if(!confirm('Sign out of Dinevo?')) return;
   await sb.auth.signOut();
   localStorage.removeItem('dinevoFaceCred');
   location.reload();
