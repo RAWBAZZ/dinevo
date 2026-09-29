@@ -1564,10 +1564,10 @@ renderStep();
 
 /* ================= RESTAURANT LIST ================= */
 const restaurantData = [
-  {name:'RAWBAZZ TEST', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712',
+  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712',
     photos:['🍢','🥘','🍛','🕯️'], menu:[{n:'Galouti Kebab',p:'₹520',v:false},{n:'Dal Makhani',p:'₹340',v:true},{n:'Butter Chicken',p:'₹560',v:false},{n:'Paneer Lababdar',p:'₹380',v:true},{n:'Mughlai Biryani',p:'₹480',v:false},{n:'Rumali Roti',p:'₹60',v:true}],
     event:{title:'Kebab & Candlelight Night', tag:'Every Friday', desc:'Live grill counter, unlimited kebabs, soft acoustic sets.'}},
-  {name:'Kj lunch Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f',
+  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f',
     photos:['🥘','🍛','🥗','🍚'], menu:[{n:'Mysore Masala Dosa',p:'₹180',v:true},{n:'Hyderabadi Veg Biryani',p:'₹260',v:true},{n:'Rava Idli',p:'₹140',v:true},{n:'Filter Coffee',p:'₹60',v:true},{n:'Bisi Bele Bath',p:'₹200',v:true}],
     event:{title:'Sunday Thali Special', tag:'Weekends', desc:'Unlimited traditional thali with 12 rotating dishes.'}},
   {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f',
@@ -1928,6 +1928,7 @@ document.getElementById('sendReqBtn').onclick = async ()=>{
 };
 
 /* ================= STATUS TRACKER + REMINDER + CANCEL ================= */
+let trackerOfferMap = {};
 async function renderStatusTracker(){
   const box = document.getElementById('statusTracker');
   const banner = document.getElementById('reminderBanner');
@@ -1936,6 +1937,8 @@ async function renderStatusTracker(){
 
   const offers = await readOffers();
   const relevant = offers.filter(o => trackedRests.has(o.restaurant));
+  trackerOfferMap = {};
+  relevant.forEach(o => trackerOfferMap[o.id] = o);
 
   const confirmed = relevant.find(o => o.status === 'confirmed');
   if(confirmed){
@@ -1974,19 +1977,32 @@ async function renderStatusTracker(){
       <div class="track-top"><b>${name}</b><span class="track-status got">${o.discount} off — respond</span></div>
       ${note}
       <div class="track-actions">
-        <button class="t-accept" ${locked?'disabled style="opacity:.4;"':''} onclick='openPayment(${JSON.stringify(o)})'>🔒 Accept &amp; Pay 2%</button>
-        <button class="t-bargain" ${locked?'disabled style="opacity:.4;"':''} onclick="trackerBargain('${o.id}', ${parseInt(o.discount)||15})">🤝 Bargain</button>
-        <button class="t-decline" onclick="updateOfferStatus('${o.id}','declined').then(renderStatusTracker)">Decline</button>
+        <button class="t-accept" data-oid="${o.id}" data-action="pay" ${locked?'disabled style="opacity:.4;"':''}>🔒 Accept &amp; Pay 2%</button>
+        <button class="t-bargain" data-oid="${o.id}" data-action="bargain" ${locked?'disabled style="opacity:.4;"':''}>🤝 Bargain</button>
+        <button class="t-decline" data-oid="${o.id}" data-action="decline">Decline</button>
       </div>
       <div id="trackerBargain-${o.id}" style="display:none; margin-top:12px;">
         <div class="bargain-chips">
-          ${[5,10,15].map(add=>`<div class="chip" onclick="sendCounterOffer('${o.id}','${(parseInt(o.discount)||15)+add}%').then(renderStatusTracker)">${(parseInt(o.discount)||15)+add}%</div>`).join('')}
+          ${[5,10,15].map(add=>`<div class="chip" data-oid="${o.id}" data-pct="${(parseInt(o.discount)||15)+add}%">${(parseInt(o.discount)||15)+add}%</div>`).join('')}
         </div>
       </div>
     </div>`;
   }).join('');
+
+  box.querySelectorAll('[data-action="pay"]').forEach(btn=>{
+    btn.onclick = ()=>{ const o = trackerOfferMap[btn.dataset.oid]; if(o) openPayment(o); };
+  });
+  box.querySelectorAll('[data-action="bargain"]').forEach(btn=>{
+    btn.onclick = ()=> trackerBargain(btn.dataset.oid);
+  });
+  box.querySelectorAll('[data-action="decline"]').forEach(btn=>{
+    btn.onclick = ()=> updateOfferStatus(btn.dataset.oid, 'declined').then(renderStatusTracker);
+  });
+  box.querySelectorAll('.bargain-chips .chip').forEach(chip=>{
+    chip.onclick = ()=> sendCounterOffer(chip.dataset.oid, chip.dataset.pct).then(renderStatusTracker);
+  });
 }
-function trackerBargain(id, base){
+function trackerBargain(id){
   const el = document.getElementById('trackerBargain-'+id);
   if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
@@ -2152,7 +2168,7 @@ function openPayment(o){
     await updateOfferStatus(o.id, 'confirmed');
     overlay.classList.remove('show');
     showToast(`Token paid — booking confirmed at ${o.restaurant}!`, '🎉');
-    setTimeout(()=> document.getElementById('offers').scrollIntoView({behavior:'smooth'}), 400);
+    setTimeout(()=> openUserProfilePage(), 400);
   };
 }
 
