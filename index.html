@@ -836,6 +836,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--gold-hi);outline-of
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
 
+
+body:has(.results-overlay.show) #authAvatarWrap,
+body:has(.payment-overlay.show) #authAvatarWrap,
+body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
+#userProfileOverlay.dining-only .results-page > :not(.results-head):not(:has(#offersList)){display:none;}
+#userProfileOverlay.dining-only .profile-group:has(#offersList) > :not(#bookingsRow):not(#bookingsHistoryPanel){display:none;}
+#userProfileOverlay.dining-only #bookingsRow{display:none;}
+#userProfileOverlay.dining-only #bookingsHistoryPanel{max-height:none!important;}
 </style>
 </head>
 <body>
@@ -2224,13 +2232,15 @@ function openPayment(o){
     </div>
     <div class="pay-token">
       <div class="amt">₹${token.toLocaleString('en-IN')}</div>
-      <div class="lbl">2% token to confirm your table</div>
+      <div class="lbl">2% token · minimum ₹20</div>
     </div>
     <div class="pay-methods" id="payMethods">
       <div class="pay-method sel" data-m="upi"><span class="ic">📲</span>UPI</div>
       <div class="pay-method" data-m="card"><span class="ic">💳</span>Card</div>
       <div class="pay-method" data-m="wallet"><span class="ic">👛</span>Wallet</div>
     </div>
+    <p class="pay-note">Discount applies to eligible items under the restaurant’s T&amp;C. Cold drinks and other excluded items may not qualify. The token is deducted after the eligible discount is applied.</p>
+    <a href="booking-preview.html" class="btn-ghost" style="display:block;text-align:center;margin:16px 0">Try the ₹100 demo wallet flow →</a>
     <button class="pay-btn" id="payNowBtn" disabled>Payments coming soon</button>
     <div class="pay-note">Online payments are not available yet. No money will be collected and this preview will not confirm a booking.</div>
   `;
@@ -2322,6 +2332,9 @@ function toggleRow(rowId, panelId, onOpen){
 
 function openUserProfilePage(view = 'all'){
   diningOfferView = view;
+  const bookingPage=document.getElementById('userProfileOverlay');
+  bookingPage.classList.toggle('dining-only',view!=='all');
+  bookingPage.querySelector('.results-head h3').textContent=view==='all'?'Your profile':view==='offers'?'Your offers':'Your bookings';
   _offersSig = null;
   refreshProfileHeader();
   document.getElementById('userProfileOverlay').classList.add('show');
