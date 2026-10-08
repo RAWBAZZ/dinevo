@@ -903,7 +903,7 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
     <div id="reminderBanner" style="display:none;"></div>
     <div id="statusTracker"></div>
     <div class="results-grid" id="resultsGrid"></div>
-    <div class="send-request-bar reveal" style="position:sticky; bottom:0; margin-top:20px;">
+    <div id="sendRequestBar" class="send-request-bar reveal" style="display:none; position:sticky; bottom:0; margin-top:20px;">
       <div class="count">Selected: <b id="selCount">0</b> restaurants</div>
       <button class="btn-primary" id="sendReqBtn" style="padding:14px 30px;">Send Request →</button>
     </div>
@@ -1685,14 +1685,25 @@ function miniCard(r, i){
   </div>`;
 }
 
+function syncRequestSelection(){
+  document.getElementById('selCount').textContent = selectedRests.size;
+  document.getElementById('sendRequestBar').style.display = selectedRests.size ? '' : 'none';
+  document.querySelectorAll('.select-btn-sm').forEach(button=>{
+    const selected = selectedRests.has(button.dataset.name);
+    button.classList.toggle('sel', selected);
+    button.textContent = selected ? '✓ Added' : 'Select';
+  });
+}
+
 function wireCardButtons(scope){
   scope.querySelectorAll('.select-btn-sm').forEach(btn=>{
     btn.onclick = (e)=>{
       e.stopPropagation();
+      if(document.getElementById('sendReqBtn').disabled) return;
       const n = btn.dataset.name;
       if(selectedRests.has(n)){ selectedRests.delete(n); btn.classList.remove('sel'); btn.textContent='Select'; }
       else{ selectedRests.add(n); btn.classList.add('sel'); btn.textContent='✓ Added'; }
-      document.getElementById('selCount').textContent = selectedRests.size;
+      syncRequestSelection();
     };
   });
   scope.querySelectorAll('.fav-heart').forEach(btn=>{
@@ -1747,8 +1758,7 @@ function buildRestaurants(){
   }
   grid.innerHTML = list.map((r,i)=>miniCard(r,i)).join('');
   wireCardButtons(grid);
-  const selCountEl = document.getElementById('selCount');
-  if(selCountEl) selCountEl.textContent = selectedRests.size;
+  syncRequestSelection();
 }
 buildRestaurants();
 renderFavorites();
@@ -1931,6 +1941,8 @@ document.getElementById('sendReqBtn').onclick = async ()=>{
   try{
     await pushRequestsToStorage();
     selectedRests.forEach(name => trackedRests.add(name));
+    selectedRests.clear();
+    syncRequestSelection();
     saveTrackedRests();
     showToast(`Request sent to ${n} restaurant${n>1?'s':''}.`);
     renderStatusTracker();
