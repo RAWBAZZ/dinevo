@@ -1375,12 +1375,12 @@ const steps = [
       </div>
       <div class="datetime-row">
         <input type="date" id="customDate" />
-        <input type="time" id="timeSlot" value="20:30" />
+        <input type="time" id="timeSlot" value="${state.time || '20:30'}" />
       </div>`;
       setTimeout(()=>{
         const todayD = new Date();
         const maxD = new Date(); maxD.setDate(maxD.getDate()+7);
-        const toISO = d => d.toISOString().split('T')[0];
+        const toISO = localDateISO;
         const dateEl = document.getElementById('customDate');
         dateEl.min = toISO(todayD);
         dateEl.max = toISO(maxD);
@@ -1880,7 +1880,20 @@ function formatTime(t){
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12}:${String(m).padStart(2,'0')} ${period}`;
 }
+function localDateISO(date){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+function bookingDateISO(){
+  if(state.date === 'Custom') return state.customDateValue;
+  const date = new Date();
+  if(state.date === 'Tomorrow') date.setDate(date.getDate()+1);
+  return localDateISO(date);
+}
 async function pushRequestsToStorage(){
+  const user = dinevoAuth.getUser();
+  if(!user) throw new Error('Please sign in before sending a request.');
+  const dateError = validateStep(3);
+  if(dateError) throw new Error(dateError);
   const guestParts = [`${state.adults} Adult${state.adults>1?'s':''}`];
   if(state.kids > 0) guestParts.push(`${state.kids} Kid${state.kids>1?'s':''}`);
   const billVal = state.bill === 'Custom' ? (state.customBillValue ? `₹${state.customBillValue}` : 'Custom amount') : (state.bill || 'Not specified');
@@ -1892,7 +1905,7 @@ async function pushRequestsToStorage(){
       customer_id: dinevoAuth.getUser() ? dinevoAuth.getUser().id : null,
       restaurant: name,
       guests: guestParts.join(' + '),
-      meal: `${mealLabels[state.meal] || 'Dinner'} · ${formatTime(state.time) || '8:30 PM'}`,
+      meal: `${mealLabels[state.meal] || 'Dinner'} · ${bookingDateISO()} · ${formatTime(state.time) || '8:30 PM'}`,
       dist: r ? r.dist : '—',
       bill: billVal,
       pref: foodLabels[state.foodType] || 'No preference specified',
@@ -1900,10 +1913,8 @@ async function pushRequestsToStorage(){
       ts: Date.now()
     });
   });
-  try{
-    const { error } = await sb.from('requests').insert(rows);
-    if(error) console.error('Supabase insert error (requests):', error);
-  }catch(e){ console.error('Network error sending request:', e); }
+  const { error } = await sb.from('requests').insert(rows);
+  if(error) throw error;
 }
 
 let trackedRests = new Set();
@@ -1912,19 +1923,25 @@ function saveTrackedRests(){ localStorage.setItem('dinevoTrackedRests', JSON.str
 
 document.getElementById('sendReqBtn').onclick = async ()=>{
   const btn = document.getElementById('sendReqBtn');
+  if(btn.disabled) return;
   const n = selectedRests.size;
-  if(n > 0){
-    btn.textContent = 'Sending…';
+  if(!n){ showToast('Select at least one restaurant.', '⚠️'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try{
     await pushRequestsToStorage();
     selectedRests.forEach(name => trackedRests.add(name));
     saveTrackedRests();
-    btn.textContent = `Request sent to ${n} restaurant${n>1?'s':''} ✓`;
+    showToast(`Request sent to ${n} restaurant${n>1?'s':''}.`);
     renderStatusTracker();
-    setTimeout(()=>{ document.getElementById('statusTracker').scrollIntoView({behavior:'smooth', block:'start'}); }, 500);
-  } else {
-    btn.textContent = 'Select at least one restaurant';
+    document.getElementById('statusTracker').scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(error){
+    console.error('Request failed:', error);
+    showToast('Request not sent. Check your connection and booking details, then try again.', '⚠️');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Send Request →';
   }
-  setTimeout(()=>{ btn.textContent = 'Send Request →'; }, 2400);
 };
 
 /* ================= STATUS TRACKER + REMINDER + CANCEL ================= */
@@ -2008,7 +2025,7 @@ function trackerBargain(id){
 }
 async function cancelBooking(offerId, restaurant){
   if(!confirm(`Cancel your booking at ${restaurant}? The restaurant will be notified.`)) return;
-  await updateOfferStatus(offerId, 'cancelled_by_customer');
+  if(!await updateOfferStatus(offerId, 'cancelled_by_customer')) return;
   trackedRests.delete(restaurant);
   saveTrackedRests();
   showToast(`Booking cancelled — ${restaurant} has been notified.`, '🚫');
@@ -2017,8 +2034,10 @@ async function cancelBooking(offerId, restaurant){
 
 /* ================= OFFERS INBOX (customer side) ================= */
 async function readOffers(){
+  const user = dinevoAuth.getUser();
+  if(!user) return [];
   try{
-    const { data, error } = await sb.from('offers').select('*').order('ts', {ascending:false});
+    const { data, error } = await sb.from('offers').select('*').eq('customer_id', user.id).order('ts', {ascending:false});
     if(error){ console.error('Supabase read error (offers):', error); return []; }
     return data || [];
   }catch(e){ console.error('Network error reading offers:', e); return []; }
@@ -2049,7 +2068,7 @@ async function renderOffers(){
       return `<div class="offer-card"><div class="confirmed-card">
         <div class="tick">✅</div>
         <h4>Booking confirmed at ${o.restaurant}</h4>
-        <p>${o.guests} · ${o.meal} · ${o.discount} off · 2% token paid</p>
+        <p>${o.guests} · ${o.meal} · ${o.discount} off</p>
         ${progressTracker(5, 'Step 5 of 8 · Confirmed — see you at the table')}
       </div></div>`;
     }
@@ -2151,8 +2170,8 @@ function openPayment(o){
       <div class="pay-method" data-m="card"><span class="ic">💳</span>Card</div>
       <div class="pay-method" data-m="wallet"><span class="ic">👛</span>Wallet</div>
     </div>
-    <button class="pay-btn" id="payNowBtn">Pay ₹${token.toLocaleString('en-IN')} securely</button>
-    <div class="pay-note">Fully adjusted against your final bill at the restaurant. Refundable per cancellation policy.</div>
+    <button class="pay-btn" id="payNowBtn" disabled>Payments coming soon</button>
+    <div class="pay-note">Online payments are not available yet. No money will be collected and this preview will not confirm a booking.</div>
   `;
   overlay.classList.add('show');
   document.getElementById('paymentClose').onclick = ()=> overlay.classList.remove('show');
@@ -2160,26 +2179,26 @@ function openPayment(o){
   sheet.querySelectorAll('.pay-method').forEach(m=>{
     m.onclick = ()=>{ sheet.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('sel')); m.classList.add('sel'); };
   });
-  document.getElementById('payNowBtn').onclick = async ()=>{
-    const btn = document.getElementById('payNowBtn');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="pay-spinner"></span>Processing payment…`;
-    await new Promise(res => setTimeout(res, 1300));
-    await updateOfferStatus(o.id, 'confirmed');
-    overlay.classList.remove('show');
-    showToast(`Token paid — booking confirmed at ${o.restaurant}!`, '🎉');
-    setTimeout(()=> openUserProfilePage(), 400);
-  };
 }
 
 async function updateOfferStatus(id, status){
+  const user = dinevoAuth.getUser();
+  if(!user){ showToast('Please sign in first.', '⚠️'); return false; }
+  if(!['declined', 'cancelled_by_customer'].includes(status)) return false;
   try{
-    const { error } = await sb.from('offers').update({ status }).eq('id', id);
-    if(error) console.error('Supabase update error:', error);
-  }catch(e){ console.error('Network error updating offer:', e); }
+    const { data, error } = await sb.from('offers').update({ status })
+      .eq('id', id).eq('customer_id', user.id).select('id').single();
+    if(error || !data) throw error || new Error('Offer was not updated.');
+  }catch(error){
+    console.error('Offer update failed:', error);
+    showToast('Could not update your booking. Please try again.', '⚠️');
+    return false;
+  }
   _offersSig = null;
   renderOffers();
+  return true;
 }
+
 async function sendCounterOffer(id, percent){
   try{
     const { error } = await sb.from('offers').update({ counter: { percent, status:'pending' } }).eq('id', id);
