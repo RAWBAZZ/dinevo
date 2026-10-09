@@ -1,14 +1,31 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dinevo · Booking flow preview</title>
 <style>
 :root{--bg:#080705;--surface:#15130d;--line:#2a251a;--gold:#c9a227;--gold-hi:#f1d68c;--text:#eae6da;--dim:#9a9686}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,sans-serif}main{max-width:720px;margin:auto;padding:24px 18px 80px}header,.row,nav{display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:30px;letter-spacing:-1px}h2{font-size:21px}p{line-height:1.6;color:var(--dim)}a{color:var(--gold-hi)}.notice{border:1px dashed var(--gold);padding:14px;border-radius:16px;font-size:13px;margin:20px 0}.card{border:1px solid var(--line);background:var(--surface);padding:22px;border-radius:24px;margin:16px 0}.row{padding:12px 0;border-bottom:1px solid var(--line)}.row span{color:var(--dim)}button,select,input{font:inherit;border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--surface);color:var(--text)}button{cursor:pointer;min-height:48px}button.primary{background:var(--gold-hi);color:var(--bg);font-weight:700}button:disabled{opacity:.45;cursor:not-allowed}nav button{flex:1}nav button[aria-pressed=true]{border-color:var(--gold);color:var(--gold-hi)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.actions button{flex:1}.amount{font-size:34px;color:var(--gold-hi)}.success{animation:arrive .6s ease-out;border-color:var(--gold);text-align:center}.tick{display:inline-grid;place-items:center;border:1px solid var(--gold);border-radius:50%;width:60px;height:60px;font-size:30px;color:var(--gold-hi)}label{display:block;margin:12px 0}select{width:100%}.small{font-size:13px}button:focus-visible,a:focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px}@keyframes arrive{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
-</style><main><header><a href="index.html">← DINEVO</a><button id="reset">Reset demo</button></header><div class="notice"><b>Interactive demo · ₹100 test credit</b><br>No real money, reservation or restaurant notification. Both tabs below simulate the two sides on this device.</div><nav aria-label="Preview role"><button id="customer" aria-pressed="true">Customer</button><button id="restaurant" aria-pressed="false">Restaurant partner</button></nav><div id="content" aria-live="polite"></div></main>
+nav[hidden]{display:none!important}</style><main><header><a href="index.html">← DINEVO</a><button id="reset">Reset demo</button></header><div class="notice"><b>Interactive demo · ₹100 test credit</b><br>No real money, reservation or restaurant notification. This preview simulates the booking on this browser only.</div><nav aria-label="Preview role"><button id="customer" aria-pressed="true">Customer</button><button id="restaurant" aria-pressed="false">Restaurant partner</button></nav><div id="content" aria-live="polite"></div></main>
 <script>
 const money=n=>'₹'+n.toFixed(2);const reasons=['Plans changed','Date or time does not suit','Discount does not suit','Chose another restaurant','Booked by mistake'];
 const fresh=()=>({stage:'offer',balance:100,token:20,bill:1000,discount:20,holdUntil:0,holdUsed:false,reason:'',ack:false,date:new Date(Date.now()+86400000).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}),time:'8:30 PM'});
-let booking=fresh(),role='customer',declining=false;
+const partnerMode=new URLSearchParams(location.search).get('partner')==='1';
+const demoKey='dinevo-booking-demo-v1';
+function loadDemo(){
+ const fallback=fresh();
+ try{const saved=JSON.parse(localStorage.getItem(demoKey));
+ if(!saved||!['offer','hold','expired','declined','paid','reviewed','active'].includes(saved.stage))return fallback;
+ fallback.stage=saved.stage;fallback.balance=['paid','reviewed','active'].includes(saved.stage)?80:100;
+ fallback.holdUsed=!!saved.holdUsed;fallback.holdUntil=Number.isFinite(saved.holdUntil)?saved.holdUntil:0;
+ fallback.reason=reasons.includes(saved.reason)?saved.reason:'';
+ return fallback;
+ }catch(e){return fallback;}
+}
+let booking=loadDemo(),role=partnerMode?'restaurant':'customer',declining=false;
+document.querySelector('nav').hidden=true;
+document.querySelector('header a').href=partnerMode?'dashboard.html':'index.html';
+document.querySelector('header a').textContent=partnerMode?'← Partner dashboard':'← DINEVO';
+window.addEventListener('storage',event=>{if(event.key===demoKey){booking=loadDemo();render(false);}});
 function summary(){return `<div class="row"><span>Restaurant</span><b>Copper &amp; Clove · sample</b></div><div class="row"><span>Date &amp; time</span><b>${booking.date} · ${booking.time}</b></div><div class="row"><span>Guests</span><b>2 adults</b></div><div class="row"><span>Selected approximate bill</span><b>${money(booking.bill)}</b></div><div class="row"><span>Agreed discount</span><b>${booking.discount}% on eligible items</b></div><div class="row"><span>Token ${['paid','reviewed','active'].includes(booking.stage)?'paid (demo)':'due'}</span><b>${money(booking.token)}</b></div>`}
 function terms(){return `<p class="small">Under the restaurant’s T&amp;C, cold drinks and other specified items may be excluded from the discount. The discount applies to eligible items; your token is then deducted from the remaining total. Final bill and eligibility are confirmed by the restaurant.</p>`}
-function render(){
+function render(save=true){
+ if(save){try{localStorage.setItem(demoKey,JSON.stringify(booking));}catch(e){}}
  if(booking.stage==='hold'&&Date.now()>=booking.holdUntil)booking.stage='expired';
  document.getElementById('customer').setAttribute('aria-pressed',role==='customer');document.getElementById('restaurant').setAttribute('aria-pressed',role==='restaurant');
  let html='';const terminal=['declined','expired'].includes(booking.stage);
