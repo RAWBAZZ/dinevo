@@ -865,14 +865,14 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <a href="#flow">How it works</a>
     <a href="#book">Book a table</a>
     <a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a>
-    <a href="javascript:void(0)" onclick="openUserProfilePage()">My Bookings</a>
+    <a href="booking-centre.html">Booking centre</a>
     <a href="#favorites">Favorites</a>
     <a href="#events">Events</a>
     <a href="#dishes">Cuisine</a>
     <a href="#matching">Smart matching</a>
     <a href="dashboard.html">For Restaurants</a>
   </div>
-  <a href="#book" class="nav-cta">Start booking</a>
+  <a href="booking-centre.html" class="nav-cta">Find a table</a>
 </nav>
 
 <!-- HERO -->
@@ -2240,6 +2240,7 @@ function openPayment(o){
       <div class="pay-method" data-m="wallet"><span class="ic">👛</span>Wallet</div>
     </div>
     <p class="pay-note">Discount applies to eligible items under the restaurant’s T&amp;C. Cold drinks and other excluded items may not qualify. The token is deducted after the eligible discount is applied.</p>
+    <a href="booking-centre.html" class="btn-ghost" style="display:block;text-align:center;margin:16px 0">Open live booking centre →</a>
     <a href="booking-preview.html" class="btn-ghost" style="display:block;text-align:center;margin:16px 0">Try the ₹100 demo wallet flow →</a>
     <button class="pay-btn" id="payNowBtn" disabled>Payments coming soon</button>
     <div class="pay-note">Online payments are not available yet. No money will be collected and this preview will not confirm a booking.</div>
@@ -2576,3 +2577,4 @@ const diningObserver=new MutationObserver(()=>{
 </script>
 </body>
 </html>
+
