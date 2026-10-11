@@ -6,7 +6,7 @@ window.DinevoPartner=(()=>{
  function update(members,restaurants){
   if(!section){
    section=document.createElement('section');section.className='card';section.id='partner-ownership';
-   section.innerHTML='<div class="card-top"><h2>My restaurants</h2><a id="admin-link" href="admin.html" hidden>Admin · list restaurants</a></div><p id="claim-intro"></p><label>Manage restaurant<select id="partner-restaurant"><option value="">All my restaurants</option></select></label><div id="owned-restaurants" class="dim"></div><details id="claim-details"><summary>Claim restaurant ownership</summary><p>Ask your Dinevo administrator for the restaurant’s unique code. You can claim more than one restaurant with this account.</p><form id="claim-restaurant-form"><label>Unique claim code<input id="restaurant-claim-code" name="code" required maxlength="64" placeholder="DINEVO-…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><button class="primary" id="claim-submit">Claim restaurant</button><p id="claim-result" role="status" aria-live="polite"></p></form></details>';
+   section.innerHTML='<div class="card-top"><h2>My restaurants</h2></div><p id="claim-intro"></p><label>Manage restaurant<select id="partner-restaurant"><option value="">All my restaurants</option></select></label><div id="owned-restaurants" class="dim"></div><details id="claim-details"><summary>Claim restaurant ownership</summary><p>Ask your Dinevo administrator for the restaurant’s unique code. You can claim more than one restaurant with this account.</p><form id="claim-restaurant-form"><label>Unique claim code<input id="restaurant-claim-code" name="code" required maxlength="64" placeholder="DINEVO-…" autocomplete="off" autocapitalize="characters" spellcheck="false"></label><button class="primary" id="claim-submit">Claim restaurant</button><p id="claim-result" role="status" aria-live="polite"></p></form></details>';
    document.querySelector('#tabs').before(section);
    document.querySelector('#partner-restaurant').onchange=e=>{selected=e.target.value;emit();};
    document.querySelector('#claim-restaurant-form').onsubmit=async e=>{
@@ -15,7 +15,6 @@ window.DinevoPartner=(()=>{
     try{const {data,error}=await sb.rpc('d2_claim_restaurant',{p_code:document.querySelector('#restaurant-claim-code').value.trim()});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Claim could not be completed');selected=data.restaurant_id;claimedOnce=true;document.querySelector('#restaurant-claim-code').value='';msg.textContent=data.name+' is now linked to your account. You can claim another restaurant below.';window.dispatchEvent(new Event('dinevo-membership-changed'));}
     catch(error){msg.textContent=error.message;}finally{btn.disabled=false;}
    };
-   sb.rpc('d2_is_admin').then(({data})=>{document.querySelector('#admin-link').hidden=data!==true;});
   }
   const owned=restaurants.filter(r=>members.some(m=>m.restaurant_id===r.id));
   if(selected&&!owned.some(r=>r.id===selected))selected='';

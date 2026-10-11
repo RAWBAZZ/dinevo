@@ -1,7 +1,8 @@
 /* ===================== DINEVO SHARED AUTH ===================== */
 const SUPABASE_URL = 'https://nvvmkuyimymigcazjobv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_7bJT1ZvXzpQy6akNvyKCcA_Gbh_d0S6';
-window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const DINEVO_PORTAL = location.pathname.endsWith('/dashboard.html') ? 'partner' : location.pathname.endsWith('/admin.html') ? 'admin' : 'customer';
+window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{storageKey:'dinevo-'+DINEVO_PORTAL+'-session'}});
 
 window.dinevoAuth = (function(){
   let resolveReady;
@@ -62,6 +63,7 @@ window.dinevoAuth = (function(){
       <button class="faceBtn" id="authFaceBtn" style="display:none;">👁 Unlock with Face ID / Touch ID</button>
     </div>`);
     document.body.appendChild(gate);
+    if(DINEVO_PORTAL==='admin') gate.querySelector('[data-mode=signup]').remove();
     maybeOfferFaceUnlock();
 
     let mode = 'login';
@@ -207,8 +209,8 @@ window.dinevoAuth = (function(){
       if(profileClickHandler) profileClickHandler();
     };
     document.getElementById('authSignOut').onclick = async ()=>{
-      await sb.auth.signOut();
-      localStorage.removeItem('dinevoFaceCred');
+      await sb.auth.signOut({scope: 'local'});
+      localStorage.removeItem('dinevoFaceCred-'+DINEVO_PORTAL);
       location.reload();
     };
   }
@@ -230,12 +232,12 @@ window.dinevoAuth = (function(){
         }
       });
       const id = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
-      localStorage.setItem('dinevoFaceCred', id);
+      localStorage.setItem('dinevoFaceCred-'+DINEVO_PORTAL, id);
       return true;
     }catch(e){ console.error('Face ID setup failed:', e); return false; }
   }
   async function tryFaceUnlock(){
-    const id = localStorage.getItem('dinevoFaceCred');
+    const id = localStorage.getItem('dinevoFaceCred-'+DINEVO_PORTAL);
     if(!id || !window.PublicKeyCredential) return false;
     try{
       const rawId = Uint8Array.from(atob(id), c=>c.charCodeAt(0));
@@ -251,7 +253,7 @@ window.dinevoAuth = (function(){
     }catch(e){ return false; }
   }
   async function maybeOfferFaceUnlock(){
-    const id = localStorage.getItem('dinevoFaceCred');
+    const id = localStorage.getItem('dinevoFaceCred-'+DINEVO_PORTAL);
     const { data } = await sb.auth.getSession();
     const session = data && data.session;
     const btn = document.getElementById('authFaceBtn');
@@ -273,6 +275,7 @@ window.dinevoAuth = (function(){
   }
 
   async function init(appName, icon){
+    appName = DINEVO_PORTAL === 'customer' ? 'Customer' : DINEVO_PORTAL === 'partner' ? 'Partner' : 'Admin';
     const isRecovery = window.location.hash.includes('type=recovery');
     if(isRecovery){
       showResetPasswordForm();
@@ -286,7 +289,7 @@ window.dinevoAuth = (function(){
     const session = data && data.session;
     if(session){
       onAuthed(session.user);
-      if(!localStorage.getItem('dinevoFaceCred') && window.PublicKeyCredential){
+      if(!localStorage.getItem('dinevoFaceCred-'+DINEVO_PORTAL) && window.PublicKeyCredential){
         setTimeout(async ()=>{
           if(confirm('Enable Face ID / Touch ID for faster sign-in next time on this device?')){
             await enableFaceUnlock();
@@ -305,3 +308,4 @@ window.dinevoAuth = (function(){
 
   return { init, ready, getUser: ()=> currentUser, onProfileClick };
 })();
+
