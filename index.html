@@ -1773,6 +1773,19 @@ function wireCardButtons(scope){
 /* ================= RESULTS PAGE: search, sort, filter ================= */
 const resultsState = { search:'', sort:'relevance', cuisine:'', foodFilter:'', price:'', rating:'' };
 
+// This explicitly labelled test entry is independent of real cuisine/dietary claims.
+function testRestaurantCard(){
+  return `<article class="rest-mini reveal in" data-test-restaurant="obama-mama">
+    <div class="rest-mini-body">
+      <div class="rest-mini-disc">TEST RESTAURANT · ALL FOOD SELECTIONS</div>
+      <div class="rest-mini-top"><h5>OBAMA MAMA</h5></div>
+      <p class="rest-mini-meta">Visible for every cuisine and food preference. This is a simulation—not a real restaurant or a dietary guarantee.</p>
+      <p class="rest-mini-disc">20% test discount · 2% test token · No real money collected</p>
+      <a class="btn-ghost" style="display:inline-block;margin-top:14px" href="booking-centre.html?restaurant=39ba8eb1-872a-432a-b019-2bbc68f9b34c" data-test-booking-link>Choose a test time →</a>
+    </div>
+  </article>`;
+}
+
 function buildRestaurants(){
   let list = restaurantData.filter(matchesFilter);
   if(resultsState.search.trim()){
@@ -1809,10 +1822,10 @@ function buildRestaurants(){
   const grid = document.getElementById('resultsGrid');
   if(!grid) return;
   if(list.length === 0){
-    grid.innerHTML = `<div class="results-empty">No restaurants match your search/filters — try adjusting them.</div>`;
+    grid.innerHTML = testRestaurantCard() + `<div class="results-empty">No other restaurants match your search/filters — try adjusting them.</div>`;
     return;
   }
-  grid.innerHTML = list.map((r,i)=>miniCard(r,i)).join('');
+  grid.innerHTML = testRestaurantCard() + list.map((r,i)=>miniCard(r,i)).join('');
   wireCardButtons(grid);
   syncRequestSelection();
 }
