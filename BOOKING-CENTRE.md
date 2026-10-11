@@ -36,7 +36,7 @@ All new tables have RLS. Browser roles can read only authorised records and cann
 ## Required activation
 
 1. Merge the review PR and deploy the existing Vercel project normally.
-2. Verify each restaurant owner's identity and registered account. An administrator creates the real restaurant in `d2_restaurants` and its verified account mapping in `d2_members`. No sample restaurant or guessed owner has been added. Use the Supabase Auth user UUID, not an email as a UUID. Do not grant customers self-service membership insertion.
+2. An approved administrator signs into `admin.html`, lists a restaurant and privately shares its generated claim code with its verified owner. After email sign-in at `dashboard.html`, the owner claims the restaurant with that code. The same account can claim multiple restaurants. OBAMA MAMA is the existing test restaurant. Browser roles cannot directly insert memberships.
 3. The owner opens the partner service board → Availability → Publish a time slot. During this temporary testing phase the customer UI uses the explicitly acknowledged 2% test-token route. It exercises the full partner workflow without collecting money or securing a real table.
 4. Before enabling paid slots, connect a payment provider through a server-side adapter. Verify webhook signatures, captured status, currency INR, the booking binding, exact amount, unique provider reference and idempotency. Only then call `d2_verify_payment` with a service credential. Late/mismatched payments are rejected and must be reconciled/refunded through the provider. Process refund requests with the provider and call `d2_verify_refund` only after verified success. Never expose service credentials in these static pages.
 
@@ -68,3 +68,21 @@ This version reads up to 300 bookings/notices and 1,500 events per account on re
 The security advisor reports the intentionally exposed authenticated SECURITY DEFINER RPCs. These implement the booking state machine while denying direct table writes; their explicit ownership checks, fixed search paths and restricted grants were tested. Payment/refund/scheduler RPCs are not executable by browser roles. See [Supabase RPC advisory](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
 
 The project also has [leaked-password protection disabled](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). This existing Auth setting was not changed.
+
+## Restaurant administration and ownership
+
+The restaurant-claims migration was applied on 11 October 2026. The verified project owner's confirmed account was provisioned as administrator through a server-side operation. Admin roles cannot be set through profile metadata or browser writes.
+
+- `admin.html`: create a restaurant with name, city, cuisines and test flag; receive a unique claim code. A blank cuisine list means all cuisines. Creation retries use an idempotency key.
+- `dashboard.html`: replaces the legacy dashboard with the secured partner booking centre. After verified email sign-in, claim a restaurant and select among all restaurants the account manages. Existing memberships remain valid.
+- Codes expire after seven days and can be claimed by one account. Only their hashes are stored. Administrators can generate a replacement code; this invalidates the previous code but does not remove existing members. Share codes privately after verifying the recipient's ownership.
+- A partner publishes availability after claiming; creating a listing alone does not create bookable slots.
+
+Ownership tests use the real migration in PGlite and actual dashboard/admin DOMs, covering multiple memberships, denied non-admin operations, expiry, replay, rate limits, regeneration, idempotency, escaping and database isolation. The ownership, test-token, database and DOM suites pass 83 assertions. These are automated checks, not a signed-in physical-device production test.
+
+```sh
+NODE_PATH=/tmp/dinevo-tests/node_modules node tests/restaurant-claims.cjs
+NODE_PATH=/tmp/dinevo-tests/node_modules node tests/test-token-flow.cjs
+```
+
+The claim-code and rate-limit tables intentionally have RLS with no browser policies and no browser grants: access is through checked RPCs only. This produces the informational [RLS-without-policy advisory](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy). The authenticated RPC and existing leaked-password advisories described above remain.
