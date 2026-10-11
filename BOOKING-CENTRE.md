@@ -1,5 +1,17 @@
 # Dinevo booking centre
 
+## Temporary 2% test-payment flow
+
+After restaurant acceptance, the customer reviews the booking, enters an estimated bill and explicitly accepts **TEST — no money collected**. The database calculates 2% in paise and records it separately as `test_token_paise`; `paid_paise` remains zero and no payment reference is invented. The customer can also continue an unpaid payment-pending booking through this test path. A real paid booking cannot be converted.
+
+Both dashboards and notifications label the result TEST. The restaurant acknowledges the simulated token, confirms the test booking, simulates arrival, marks seated and completes the visit. Future-dated test bookings can simulate arrival immediately; real bookings retain their check-in time restriction. Test reviews are labelled test feedback, not verified real visits.
+
+Test bookings do not reserve real seat capacity, trigger real visit reminders, debit a wallet or create cash refunds. Explicit test consent and ownership are enforced server-side. Retrying the same simulated token is idempotent. The existing real payment verification RPC remains server-only and refuses test bookings.
+
+Use a verified partner account to publish a slot, then a customer account to request it. Restaurant identity/owner setup is still required; this change does not let customers claim restaurant ownership. No production restaurant or account was fabricated for testing.
+
+New integration check: `NODE_PATH=/tmp/dinevo-tests/node_modules node tests/test-token-flow.cjs`. It drives both dashboard DOMs through a Supabase-shaped adapter into disposable PostgreSQL using the actual migrations and row policies. It does not create production records. Physical browser/camera and signed-in live-account QA remain separate checks.
+
 A live, Supabase-backed booking flow at `booking-centre.html`; partner service board at `booking-centre.html?partner=1`. Existing black/gold styling is retained. Home and partner dashboard link to the new flow. Legacy requests and the explicitly labelled wallet demo remain separate; legacy data is not silently treated as verified reservations/payments.
 
 ## Features, in priority order
@@ -25,7 +37,7 @@ All new tables have RLS. Browser roles can read only authorised records and cann
 
 1. Merge the review PR and deploy the existing Vercel project normally.
 2. Verify each restaurant owner's identity and registered account. An administrator creates the real restaurant in `d2_restaurants` and its verified account mapping in `d2_members`. No sample restaurant or guessed owner has been added. Use the Supabase Auth user UUID, not an email as a UUID. Do not grant customers self-service membership insertion.
-3. The owner opens the partner service board → Availability → Publish a time slot. The UI currently publishes no-token slots, which can complete the full live reservation flow without collecting money.
+3. The owner opens the partner service board → Availability → Publish a time slot. During this temporary testing phase the customer UI uses the explicitly acknowledged 2% test-token route. It exercises the full partner workflow without collecting money or securing a real table.
 4. Before enabling paid slots, connect a payment provider through a server-side adapter. Verify webhook signatures, captured status, currency INR, the booking binding, exact amount, unique provider reference and idempotency. Only then call `d2_verify_payment` with a service credential. Late/mismatched payments are rejected and must be reconciled/refunded through the provider. Process refund requests with the provider and call `d2_verify_refund` only after verified success. Never expose service credentials in these static pages.
 
 No wallet funds are issued or debited by this module. The existing ₹100 wallet preview remains a labelled simulation. Backend refund state does not transfer money.

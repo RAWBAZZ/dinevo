@@ -6,6 +6,7 @@ const ok=(v,msg)=>{assert.ok(v,msg);checks++;};const fail=async(sql,args=[])=>{a
 try{
 await db.exec("create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;");
 await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610100001_booking_centre.sql'),'utf8'));
+await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261010200450_test_token_flow.sql'),'utf8'));
 await q('insert into auth.users values($1),($2),($3)',[c,p,x]);const r=await value("insert into d2_restaurants(name) values('Test restaurant') returning id as v");await q('insert into d2_members values($1,$2)',[r,p]);
 await as(p);const publish=async(token=0,hours=1,capacity=2)=>value("select d2_publish_slot($1,now()+make_interval(hours=>$2),$3,2,20,100000,$4,0,'Cold drinks excluded') as v",[r,hours,capacity,token]);
 const s=await publish();await as(c);const b=await value('select d2_request($1,2,$2) as v',[s,{dietary:'Peanut allergy',high_chair:true}]);ok(b,'Request succeeds');await fail('select d2_action($1,\'confirm\')',[b]);await fail('select d2_review($1,5,\'Too early\')',[b]);
