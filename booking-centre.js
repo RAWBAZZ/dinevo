@@ -9,7 +9,8 @@ labels.token_submitted='Token simulated · partner review';
 const label=k=>k.startsWith('test_')?'TEST · '+label(k.slice(5)):labels[k]||(k.startsWith('running_late_')?`Running ${k.split('_').pop()} minutes late`:k);
 let state={bookings:[],slots:[],restaurants:[],events:[],notices:[],reviews:[],members:[],wait:[],managedSlots:[]}, tab=partner?'Upcoming':'Find a table',busy=false,loading=false,submitDialog=null,refreshTimer,scanStream;
 const tabs=partner?['Upcoming','Arrived','Seated','Completed','Cancelled','Availability','Updates']:['Find a table','My bookings','Waitlist','Updates'];
-let filters={restaurant:'',date:'',party:2};
+const restaurantParam=new URLSearchParams(location.search).get('restaurant')||'';
+let filters={restaurant:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(restaurantParam)?restaurantParam:'',date:'',party:2};
 function toast(s){$('#message').textContent=s;}
 async function rpc(name,args={}){const r=await window.sb.rpc(name,args);if(r.error)throw new Error(r.error.message);return r.data;}
 async function query(table,order,limit=300){let q=window.sb.from(table).select('*');if(order)q=q.order(order,{ascending:false});const r=await q.limit(limit);if(r.error)throw new Error(r.error.message);return r.data;}
