@@ -86,3 +86,15 @@ NODE_PATH=/tmp/dinevo-tests/node_modules node tests/test-token-flow.cjs
 ```
 
 The claim-code and rate-limit tables intentionally have RLS with no browser policies and no browser grants: access is through checked RPCs only. This produces the informational [RLS-without-policy advisory](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy). The authenticated RPC and existing leaked-password advisories described above remain.
+
+## Separate portals and refreshed catalogue — 11 October 2026
+
+Customer: `/index.html` and `/booking-centre.html`. Partner: `/dashboard.html`. Administrator: `/admin.html`. Each portal has its own session storage key and sign-out scope. Credentials may belong to the same verified identity, but logging into one portal does not log into another. Roles remain enforced by database membership/admin checks; URLs and storage keys are not authorisation boundaries. The old `?partner=1` flag no longer changes the customer page into a partner screen. Cross-portal navigation and partner admin links were removed. Existing shared sessions are not migrated; sign in again on each portal.
+
+The customer homepage now reads the active Supabase catalogue, rather than hardcoded sample restaurants. Admin-created active listings appear here before they have availability; the owner must claim and publish slots before bookings can be requested. Cards link to the live booking centre and do not invent prices, ratings or menus.
+
+At the user's request, the old restaurant was archived, its slots closed, and all existing current/legacy ownership mappings and old claim codes removed. Historical bookings remain stored. Ten fresh Indian-named test listings were created: Kesar Aangan, Amrit Rasoi, Gulabi Thali, Peepal Courtyard, Mitti Ki Handi, Konkani Zaika, Banarasi Baithak, Malabar Mehfil, Desi Dastarkhwan and Tandoori Chaupal. Database verification found exactly ten active listings, ten distinct hashed codes, zero memberships and zero codes for unlisted restaurants. They are fictional test listings, with no invented addresses or genuine restaurant affiliations.
+
+Seeded codes are hashed and cannot be recovered. On `/admin.html`, generate a replacement claim code for the intended restaurant, copy the displayed code and privately share it with its verified owner. Codes expire in seven days. No codes appear on customer or partner listings. Inactive/unlisted restaurants cannot be claimed.
+
+Validation: 24 ownership/admin assertions, 26 full test-token flow assertions and 10 booking UI assertions passed. Portal tests additionally verify distinct sessions, dedicated login labels, no cross-portal links, ignored partner query flag, active-only catalogue loading, ten cards, escaped names and live booking links. Production credentialed/multi-device interaction was not automated.

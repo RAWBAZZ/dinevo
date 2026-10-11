@@ -870,7 +870,7 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <a href="#events">Events</a>
     <a href="#dishes">Cuisine</a>
     <a href="#matching">Smart matching</a>
-    <a href="dashboard.html">For Restaurants</a>
+    
   </div>
   <a href="booking-centre.html" class="nav-cta">Find a table</a>
 </nav>
@@ -1253,7 +1253,7 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <h3>DINEVO</h3>
     <p>The future of restaurant bookings — where restaurants compete for your table, not the other way around.</p>
     <div class="foot-links">
-      <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a><a href="dashboard.html">For Restaurants</a>
+      <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a>
     </div>
     <div class="foot-bottom">© 2026 DINEVO. Concept &amp; interface preview.</div>
   </div>
@@ -1619,48 +1619,12 @@ document.getElementById('backBtn').onclick = ()=>{ showStepError(null); if(curre
 renderStep();
 
 /* ================= RESTAURANT LIST ================= */
-const restaurantData = [
-  {name:'Copper & Clove', type:'both', cuisine:'North Indian · Mughlai', rating:4.7, dist:'0.8 KM', cost:'₹1,600', resp:'6 min', open:true, disc:'Usually offers 18–22% discount', emo:'🍢', bgc:'#3a2712',
-    photos:['🍢','🥘','🍛','🕯️'], menu:[{n:'Galouti Kebab',p:'₹520',v:false},{n:'Dal Makhani',p:'₹340',v:true},{n:'Butter Chicken',p:'₹560',v:false},{n:'Paneer Lababdar',p:'₹380',v:true},{n:'Mughlai Biryani',p:'₹480',v:false},{n:'Rumali Roti',p:'₹60',v:true}],
-    event:{title:'Kebab & Candlelight Night', tag:'Every Friday', desc:'Live grill counter, unlimited kebabs, soft acoustic sets.'}},
-  {name:'Saffron Leaf', type:'pureveg', cuisine:'South Indian · Multi Cuisine', rating:4.9, dist:'1.2 KM', cost:'₹900', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'🥘', bgc:'#1f3a1f',
-    photos:['🥘','🍛','🥗','🍚'], menu:[{n:'Mysore Masala Dosa',p:'₹180',v:true},{n:'Hyderabadi Veg Biryani',p:'₹260',v:true},{n:'Rava Idli',p:'₹140',v:true},{n:'Filter Coffee',p:'₹60',v:true},{n:'Bisi Bele Bath',p:'₹200',v:true}],
-    event:{title:'Sunday Thali Special', tag:'Weekends', desc:'Unlimited traditional thali with 12 rotating dishes.'}},
-  {name:'The Ember House', type:'nonveg', cuisine:'BBQ · Continental', rating:4.6, dist:'2.1 KM', cost:'₹2,200', resp:'9 min', open:true, disc:'Usually offers 12–15% discount', emo:'🍖', bgc:'#3a1f1f',
-    photos:['🍖','🔥','🥩','🍷'], menu:[{n:'Smoked Ribs',p:'₹720',v:false},{n:'Grilled Salmon',p:'₹840',v:false},{n:'Charred Corn Salad',p:'₹280',v:true},{n:'Whiskey Glazed Wings',p:'₹460',v:false},{n:'Mash & Gravy',p:'₹220',v:true}],
-    event:{title:'Fire Pit Fridays', tag:'Every Friday', desc:'Open-flame grill theatre with a build-your-own platter bar.'}},
-  {name:'Bombay Bistro', type:'both', cuisine:'Street Food · Fast Food', rating:4.4, dist:'1.6 KM', cost:'₹700', resp:'5 min', open:true, disc:'Usually offers 15–20% discount', emo:'🌮', bgc:'#3a3212',
-    photos:['🌮','🥙','🍟','🥤'], menu:[{n:'Vada Pav',p:'₹60',v:true},{n:'Pav Bhaji',p:'₹160',v:true},{n:'Chicken Frankie',p:'₹190',v:false},{n:'Bombay Sandwich',p:'₹130',v:true},{n:'Masala Fries',p:'₹150',v:true}],
-    event:{title:'Retro Bombay Nights', tag:'Monthly', desc:'90s Bollywood playlist, street-cart pop-ups, and chaat counters.'}},
-  {name:'Jain Bhoj', type:'jain', cuisine:'North Indian · Jain', rating:4.8, dist:'2.6 KM', cost:'₹1,100', resp:'7 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍲', bgc:'#2b3a12',
-    photos:['🍲','🥗','🍚','🫓'], menu:[{n:'Jain Dal Fry',p:'₹220',v:true},{n:'Lauki Kofta',p:'₹280',v:true},{n:'Jeera Rice',p:'₹160',v:true},{n:'Jain Thali',p:'₹420',v:true},{n:'Kaju Curry',p:'₹340',v:true}],
-    event:{title:'Satvik Thali Evenings', tag:'Daily 7–10 PM', desc:'No onion, no garlic — a full traditional satvik spread.'}},
-  {name:'Osteria Nera', type:'both', cuisine:'Italian · Cafe', rating:4.5, dist:'3.4 KM', cost:'₹2,800', resp:'11 min', open:false, disc:'Usually offers 15% discount', emo:'🍝', bgc:'#231f3a',
-    photos:['🍝','🍕','🍷','🧀'], menu:[{n:'Truffle Risotto',p:'₹680',v:true},{n:'Margherita Pizza',p:'₹520',v:true},{n:'Osso Buco',p:'₹920',v:false},{n:'Tiramisu',p:'₹340',v:true},{n:'Burrata Salad',p:'₹460',v:true}],
-    event:{title:'Wine & Pasta Pairing', tag:'First Saturday', desc:'Five-course tasting menu paired with Italian wines.'}},
-  {name:'Green Bowl Vegan', type:'vegan', cuisine:'Multi Cuisine · Vegan', rating:4.6, dist:'1.9 KM', cost:'₹850', resp:'6 min', open:true, disc:'Usually offers 20% discount', emo:'🥗', bgc:'#123a2c',
-    photos:['🥗','🥑','🍜','🫘'], menu:[{n:'Buddha Bowl',p:'₹320',v:true},{n:'Vegan Ramen',p:'₹360',v:true},{n:'Jackfruit Tacos',p:'₹290',v:true},{n:'Almond Milk Latte',p:'₹150',v:true},{n:'Chickpea Curry',p:'₹260',v:true}],
-    event:{title:'Plant-Based Brunch Club', tag:'Sundays 10–2', desc:'All-vegan brunch spread with cold-pressed juices.'}},
-  {name:'Kabab Junction', type:'nonveg', cuisine:'Mughlai · BBQ', rating:4.3, dist:'0.9 KM', cost:'₹1,400', resp:'8 min', open:true, disc:'Usually offers 15–18% discount', emo:'🍗', bgc:'#3a1f2a',
-    photos:['🍗','🍢','🌶️','🫓'], menu:[{n:'Seekh Kebab',p:'₹340',v:false},{n:'Chicken Tikka',p:'₹380',v:false},{n:'Mutton Boti',p:'₹460',v:false},{n:'Garlic Naan',p:'₹70',v:true},{n:'Firni',p:'₹120',v:true}],
-    event:{title:'Late Night Grill', tag:'Till 1 AM', desc:'Post-midnight kebab counter for the night owls.'}},
-  {name:'Dragon Wok', type:'both', cuisine:'Chinese · Seafood', rating:4.5, dist:'2.4 KM', cost:'₹1,300', resp:'7 min', open:true, disc:'Usually offers 12–18% discount', emo:'🥡', bgc:'#1f2c3a',
-    photos:['🥡','🍜','🦐','🥢'], menu:[{n:'Kung Pao Chicken',p:'₹380',v:false},{n:'Veg Hakka Noodles',p:'₹260',v:true},{n:'Prawn Dumplings',p:'₹420',v:false},{n:'Sichuan Tofu',p:'₹300',v:true},{n:'Chilli Garlic Fish',p:'₹460',v:false}],
-    event:{title:'Dim Sum Sunday', tag:'Weekends', desc:'Unlimited steamed dim sum baskets, made fresh table-side.'}},
-  {name:'Sushi Ko', type:'nonveg', cuisine:'Japanese · Seafood', rating:4.8, dist:'3.1 KM', cost:'₹2,600', resp:'10 min', open:true, disc:'Usually offers 10–15% discount', emo:'🍣', bgc:'#1f2a3a',
-    photos:['🍣','🍱','🍵','🥢'], menu:[{n:'Salmon Nigiri (6pc)',p:'₹520',v:false},{n:'Dragon Roll',p:'₹640',v:false},{n:'Miso Soup',p:'₹180',v:true},{n:'Vegetable Tempura',p:'₹340',v:true},{n:'Matcha Ice Cream',p:'₹220',v:true}],
-    event:{title:'Omakase Evenings', tag:'By reservation', desc:'Chef\'s tasting counter — 8 courses, seasonal picks.'}},
-  {name:'Punjab Da Dhaba', type:'both', cuisine:'North Indian · Punjabi', rating:4.6, dist:'1.4 KM', cost:'₹950', resp:'5 min', open:true, disc:'Usually offers 18% discount', emo:'🫓', bgc:'#3a2a14',
-    photos:['🫓','🧈','🥛','🌾'], menu:[{n:'Sarson Da Saag',p:'₹280',v:true},{n:'Amritsari Fish',p:'₹460',v:false},{n:'Butter Naan',p:'₹65',v:true},{n:'Lassi',p:'₹110',v:true},{n:'Chole Bhature',p:'₹220',v:true}],
-    event:{title:'Dhaba Dawaat', tag:'Every Thursday', desc:'Roadside-style dhaba spread with live tandoor.'}},
-  {name:'Cafe Latte House', type:'pureveg', cuisine:'Cafe · Desserts', rating:4.4, dist:'0.6 KM', cost:'₹600', resp:'4 min', open:true, disc:'Usually offers 20–25% discount', emo:'☕', bgc:'#2a1f18',
-    photos:['☕','🍰','🥐','🍪'], menu:[{n:'Flat White',p:'₹160',v:true},{n:'Red Velvet Slice',p:'₹220',v:true},{n:'Almond Croissant',p:'₹150',v:true},{n:'Cold Brew',p:'₹180',v:true},{n:'Cheesecake',p:'₹240',v:true}],
-    event:{title:'Study & Sip Hours', tag:'Weekdays 3–7 PM', desc:'Quiet corner, free wifi, bottomless filter coffee refills.'}},
-];
+let restaurantData = [];
 
 const selectedRests = new Set();
 
 function matchesFilter(r){
+  if(r.is_test) return true;
   if(!state.foodType) return true;
   if(state.foodType==='veg') return r.type==='veg' || r.type==='pureveg' || r.type==='both';
   if(state.foodType==='nonveg') return r.type==='nonveg' || r.type==='both';
@@ -1693,14 +1657,14 @@ function renderFavorites(){
 
 let statusMap = {};
 async function loadStatuses(){
-  try{
-    const { data, error } = await sb.from('restaurant_status').select('*');
-    if(error){ console.error('Supabase read error (restaurant_status):', error); return; }
-    statusMap = {};
-    (data || []).forEach(s=> statusMap[s.restaurant] = s);
-    buildRestaurants();
-    renderFavorites();
-  }catch(e){ console.error('Network error loading status:', e); }
+  try {
+    await dinevoAuth.ready;
+    const {data,error}=await sb.from('d2_restaurants').select('id,name,city,cuisines,is_test').eq('active',true).order('name');
+    if(error) throw error;
+    restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:true}));
+    selectedRests.clear(); statusMap={};
+    buildRestaurants();renderFavorites();renderEvents();syncRequestSelection();
+  } catch(e) { document.getElementById('resultsGrid').textContent='Could not load restaurants. Please refresh to retry.'; }
 }
 function waitBadge(name){
   const s = statusMap[name];
@@ -1718,27 +1682,8 @@ function tagFor(type){
 }
 
 function miniCard(r, i){
-  const t = tagFor(r.type);
-  const isFav = favorites.has(r.name);
-  const isSel = selectedRests.has(r.name);
-  return `<div class="rest-mini reveal in" style="transition-delay:${i*40}ms" data-open="${r.name}">
-    <div class="rest-mini-media" style="background:${r.bgc};">
-      <span class="tag-mini ${t.c==='veg'?'veg':t.c==='nonveg'?'nonveg':'both'}" style="background:${t.c==='veg'?'rgba(76,154,91,.25)':t.c==='nonveg'?'rgba(180,72,62,.25)':'rgba(217,138,52,.25)'}; color:${t.c==='veg'?'#8fd39c':t.c==='nonveg'?'#e6968c':'#f0b876'};">${t.l}</span>
-      <button class="fav-heart ${isFav?'on':''}" data-fav="${r.name}">${isFav?'♥':'♡'}</button>
-      <span class="status-dot ${r.open?'':'closed'}"></span>
-      ${r.emo}
-    </div>
-    <div class="rest-mini-body">
-      <div class="rest-mini-top"><h5>${r.name}</h5><div class="rest-mini-rating">★${r.rating}</div></div>
-      <div class="rest-mini-meta">📍 ${r.dist} · ${r.cuisine.split(' · ')[0]}</div>
-      ${waitBadge(r.name)}
-      <div class="rest-mini-disc">🏷 ${r.disc.replace('Usually offers ','')}</div>
-      <div class="rest-mini-foot">
-        <div class="cost">${r.cost}</div>
-        <button class="select-btn-sm ${isSel?'sel':''}" data-name="${r.name}">${isSel?'✓ Added':'Select'}</button>
-      </div>
-    </div>
-  </div>`;
+  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return `<article class="rest-mini reveal in"><div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button></div><p class="rest-mini-meta">${safe(r.city||'Location to be added')} · ${safe(r.cuisine)}</p>${r.is_test?'<p class="rest-mini-disc">TEST LISTING · No real restaurant reservation</p>':''}<a class="btn-ghost" href="booking-centre.html?restaurant=${encodeURIComponent(r.id)}">View availability →</a></div></article>`;
 }
 
 function syncRequestSelection(){
@@ -1772,19 +1717,6 @@ function wireCardButtons(scope){
 
 /* ================= RESULTS PAGE: search, sort, filter ================= */
 const resultsState = { search:'', sort:'relevance', cuisine:'', foodFilter:'', price:'', rating:'' };
-
-// This explicitly labelled test entry is independent of real cuisine/dietary claims.
-function testRestaurantCard(){
-  return `<article class="rest-mini reveal in" data-test-restaurant="obama-mama">
-    <div class="rest-mini-body">
-      <div class="rest-mini-disc">TEST RESTAURANT · ALL FOOD SELECTIONS</div>
-      <div class="rest-mini-top"><h5>OBAMA MAMA</h5></div>
-      <p class="rest-mini-meta">Visible for every cuisine and food preference. This is a simulation—not a real restaurant or a dietary guarantee.</p>
-      <p class="rest-mini-disc">20% test discount · 2% test token · No real money collected</p>
-      <a class="btn-ghost" style="display:inline-block;margin-top:14px" href="booking-centre.html?restaurant=39ba8eb1-872a-432a-b019-2bbc68f9b34c" data-test-booking-link>Choose a test time →</a>
-    </div>
-  </article>`;
-}
 
 function buildRestaurants(){
   let list = restaurantData.filter(matchesFilter);
@@ -1822,10 +1754,10 @@ function buildRestaurants(){
   const grid = document.getElementById('resultsGrid');
   if(!grid) return;
   if(list.length === 0){
-    grid.innerHTML = testRestaurantCard() + `<div class="results-empty">No other restaurants match your search/filters — try adjusting them.</div>`;
+    grid.innerHTML = `<div class="results-empty">No restaurants match your search/filters — try adjusting them.</div>`;
     return;
   }
-  grid.innerHTML = testRestaurantCard() + list.map((r,i)=>miniCard(r,i)).join('');
+  grid.innerHTML = list.map((r,i)=>miniCard(r,i)).join('');
   wireCardButtons(grid);
   syncRequestSelection();
 }
@@ -1835,7 +1767,7 @@ loadStatuses();
 setInterval(loadStatuses, 15000);
 try{
   sb.channel('status-live-customer')
-    .on('postgres_changes', { event:'*', schema:'public', table:'restaurant_status' }, loadStatuses)
+    .on('postgres_changes', { event:'*', schema:'public', table:'d2_restaurants' }, loadStatuses)
     .subscribe();
 }catch(e){ console.error('Realtime subscribe failed:', e); }
 
@@ -2028,6 +1960,7 @@ document.getElementById('sendReqBtn').onclick = async ()=>{
 /* ================= STATUS TRACKER + REMINDER + CANCEL ================= */
 let trackerOfferMap = {};
 async function renderStatusTracker(){
+  for(const name of trackedRests) if(!restaurantData.some(r=>r.name===name)) trackedRests.delete(name);
   const box = document.getElementById('statusTracker');
   const banner = document.getElementById('reminderBanner');
   if(!box) return;
@@ -2120,7 +2053,7 @@ async function readOffers(){
   try{
     const { data, error } = await sb.from('offers').select('*').eq('customer_id', user.id).order('ts', {ascending:false});
     if(error){ console.error('Supabase read error (offers):', error); return []; }
-    return data || [];
+    return (data || []).filter(o=>restaurantData.some(r=>r.name===o.restaurant));
   }catch(e){ console.error('Network error reading offers:', e); return []; }
 }
 let _offersSig = null;
@@ -2433,8 +2366,8 @@ document.getElementById('addAddressBtn').onclick = ()=>{
 document.getElementById('row-manage').onclick = ()=> toggleRow('row-manage','panel-manage');
 document.getElementById('signOutRow').onclick = async ()=>{
   if(!confirm('Sign out of Dinevo?')) return;
-  await sb.auth.signOut();
-  localStorage.removeItem('dinevoFaceCred');
+  await sb.auth.signOut({scope:'local'});
+  localStorage.removeItem('dinevoFaceCred-'+DINEVO_PORTAL);
   location.reload();
 };
 document.getElementById('clearDataBtn').onclick = ()=>{
@@ -2457,12 +2390,8 @@ function renderProfileFavorites(){
   if(!box) return;
   const favList = restaurantData.filter(r=>favorites.has(r.name));
   if(summary) summary.textContent = favList.length ? `${favList.length} saved · Tap to view` : "Restaurants you've saved";
-  box.innerHTML = favList.length ? favList.map(r=>`
-    <div class="mini-fav-item">
-      <div class="mf-ic" style="background:${r.bgc};">${r.emo}</div>
-      <div class="mf-text"><b>${r.name}</b><span>${r.cuisine} · ★${r.rating}</span></div>
-    </div>
-  `).join('') : '<p class="pf-note" style="margin-top:0;">No favorites yet — tap the ♥ on any restaurant to save it here.</p>';
+  box.innerHTML = favList.length ? favList.map(miniCard).join('') : '<p class="pf-note">No saved restaurants yet.</p>';
+  wireCardButtons(box);
 }
 document.getElementById('favProfileRow').onclick = ()=> toggleRow('favProfileRow','panel-favorites', renderProfileFavorites);
 

@@ -14,7 +14,7 @@ const delay=()=>new Promise(r=>setTimeout(r,20));
  const fail=async(uid,sql,args,label)=>{await assert.rejects(as(uid,sql,args));checks++;console.log('PASS '+label);};
  async function settle(predicate,label){for(let i=0;i<100;i++){await queue;await delay();if(predicate())return;}throw Error('Timed out: '+label);}
  function app(partner){
-  const dom=new JSDOM(fs.readFileSync(path.join(root,'booking-centre.html'),'utf8'),{url:'https://test.dinevo/booking-centre.html'+(partner?'?partner=1':''),runScripts:'outside-only',pretendToBeVisual:true});windows.push(dom);
+  const dom=new JSDOM(fs.readFileSync(path.join(root,partner?'dashboard.html':'booking-centre.html'),'utf8'),{url:'https://test.dinevo/'+(partner?'dashboard.html':'booking-centre.html'),runScripts:'outside-only',pretendToBeVisual:true});windows.push(dom);
   const w=dom.window,d=w.document,uid=partner?ids.partner:ids.customer;let refresh;
   w.setInterval=(fn,ms)=>{if(ms===15000)refresh=fn;return 1;};w.clearInterval=()=>{};
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.HTMLElement.prototype.scrollIntoView=function(){};

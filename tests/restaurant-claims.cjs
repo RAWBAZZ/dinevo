@@ -36,6 +36,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
  await assert.rejects(as(other,'insert into d2_members values($1,$2)',[first,other]));checks++;
  const third=await call(admin,'d2_admin_create_restaurant',{p_name:'Third',p_city:'Mumbai',p_cuisines:[],p_is_test:true,p_request:'00000000-0000-0000-0000-000000000099'});
  const retry=await call(admin,'d2_admin_create_restaurant',{p_name:'Third',p_city:'Mumbai',p_cuisines:[],p_is_test:true,p_request:'00000000-0000-0000-0000-000000000099'});ok(retry.already_created&&retry.restaurant_id===third.restaurant_id&&retry.code===null,'Create retry does not duplicate restaurant or rotate code');
+ await q('update d2_restaurants set active=false where id=$1',[third.restaurant_id]);ok(!(await call(other,'d2_claim_restaurant',{p_code:third.code})).ok,'Unlisted restaurant cannot be claimed');await q('update d2_restaurants set active=true where id=$1',[third.restaurant_id]);
  const replacement=await call(admin,'d2_issue_claim_code',{p_restaurant:third.restaurant_id});ok(!(await call(other,'d2_claim_restaurant',{p_code:third.code})).ok,'Replacement invalidates previous code');
  await q("update d2_claim_codes set expires_at=now()-interval '1 second' where restaurant_id=$1",[third.restaurant_id]);ok(!(await call(other,'d2_claim_restaurant',{p_code:replacement.code})).ok,'Expired code rejected');
  const valid=await call(admin,'d2_issue_claim_code',{p_restaurant:third.restaurant_id});for(let i=0;i<10;i++)await call(other,'d2_claim_restaurant',{p_code:'wrong'});
