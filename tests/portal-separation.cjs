@@ -18,7 +18,7 @@ const root=path.join(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'
  w.dinevoAuth={ready:Promise.resolve()};w.sb={from:t=>{assert.equal(t,'d2_restaurants');return {select(){return this},eq(k,v){activeFilter=[k,v];return this},order:async()=>({data:rows})};}};
  w.eval('let restaurantData=[],statusMap={};const favorites=new Set();const selectedRests=new Set();function buildRestaurants(){}function renderFavorites(){}function renderEvents(){}function syncRequestSelection(){}');
  w.eval(html.slice(html.indexOf('async function loadStatuses(){'),html.indexOf('function waitBadge')));
- w.favorites=new w.Set();
+ w.favorites=new w.Set();w.selectedRests=new w.Set();
  w.eval(html.slice(html.indexOf('function miniCard(r, i){'),html.indexOf('function syncRequestSelection()')));
  await w.loadStatuses();assert.deepEqual(activeFilter,['active',true]);assert.equal(w.eval('restaurantData.length'),10);
  w.document.querySelector('#resultsGrid').innerHTML=w.eval('restaurantData.map(miniCard).join(\'\')');assert.equal(w.document.querySelectorAll('#resultsGrid article').length,10);assert.equal(w.document.querySelector('#resultsGrid script'),null);assert.equal(w.document.querySelectorAll('#resultsGrid a[href^="booking-centre.html?restaurant="]').length,10);
