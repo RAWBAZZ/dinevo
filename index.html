@@ -937,8 +937,8 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <div id="reminderBanner" style="display:none;"></div>
     <div id="statusTracker"></div>
     <div class="results-grid" id="resultsGrid"></div>
-    <div id="sendRequestBar" class="send-request-bar reveal" style="display:none; position:sticky; bottom:0; margin-top:20px;">
-      <div class="count">Selected: <b id="selCount">0</b> restaurants</div>
+    <div id="sendRequestBar" class="send-request-bar reveal in" style="display:none; position:sticky; bottom:0; margin-top:20px;">
+      <p style="font-size:12px">Test flow: no real payment or reservation. Requests go only to your selected restaurants; unclaimed listings may not reply.</p><div class="count">Selected: <b id="selCount">0</b> restaurants</div>
       <button class="btn-primary" id="sendReqBtn" style="padding:14px 30px;">Send Request →</button>
     </div>
   </div>
@@ -1406,7 +1406,7 @@ const steps = [
         ${opt('🔎','Search a location','location','search')}
       </div>`;
     }},
-  { title:"How far can we look?", sub:"Restaurants outside this radius won't see your request.",
+  { title:"How far can we look?", sub:"Select your preferred distance. Test listings do not have verified locations.",
     render: (body)=>{
       body.innerHTML = `<div class="option-grid">
         ${opt('①','Within 1 KM','distance','1')}
@@ -1662,7 +1662,7 @@ async function loadStatuses(){
     const {data,error}=await sb.from('d2_restaurants').select('id,name,city,cuisines,is_test').eq('active',true).order('name');
     if(error) throw error;
     restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:true}));
-    selectedRests.clear(); statusMap={};
+    for(const name of selectedRests) if(!restaurantData.some(r=>r.name===name)) selectedRests.delete(name); statusMap={};
     buildRestaurants();renderFavorites();renderEvents();syncRequestSelection();
   } catch(e) { document.getElementById('resultsGrid').textContent='Could not load restaurants. Please refresh to retry.'; }
 }
@@ -1683,7 +1683,7 @@ function tagFor(type){
 
 function miniCard(r, i){
   const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  return `<article class="rest-mini reveal in"><div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button></div><p class="rest-mini-meta">${safe(r.city||'Location to be added')} · ${safe(r.cuisine)}</p>${r.is_test?'<p class="rest-mini-disc">TEST LISTING · No real restaurant reservation</p>':''}<a class="btn-ghost" href="booking-centre.html?restaurant=${encodeURIComponent(r.id)}">View availability →</a></div></article>`;
+  return `<article class="rest-mini reveal in"><div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button></div><p class="rest-mini-meta">${safe(r.city||'Location to be added')} · ${safe(r.cuisine)}</p>${r.is_test?'<p class="rest-mini-disc">TEST LISTING · No real restaurant reservation</p>':''}<button class="select-btn-sm ${selectedRests.has(r.name)?'sel':''}" data-name="${safe(r.name)}">${selectedRests.has(r.name)?'✓ Added':'Select for quote'}</button><a class="btn-ghost" href="booking-centre.html?restaurant=${encodeURIComponent(r.id)}">View availability →</a></div></article>`;
 }
 
 function syncRequestSelection(){
@@ -1900,32 +1900,18 @@ function bookingDateISO(){
   if(state.date === 'Tomorrow') date.setDate(date.getDate()+1);
   return localDateISO(date);
 }
+let quoteAttempt=null;
 async function pushRequestsToStorage(){
-  const user = dinevoAuth.getUser();
-  if(!user) throw new Error('Please sign in before sending a request.');
-  const dateError = validateStep(3);
-  if(dateError) throw new Error(dateError);
-  const guestParts = [`${state.adults} Adult${state.adults>1?'s':''}`];
-  if(state.kids > 0) guestParts.push(`${state.kids} Kid${state.kids>1?'s':''}`);
-  const billVal = state.bill === 'Custom' ? (state.customBillValue ? `₹${state.customBillValue}` : 'Custom amount') : (state.bill || 'Not specified');
-  const rows = [];
-  selectedRests.forEach(name=>{
-    const r = restaurantData.find(x=>x.name===name);
-    rows.push({
-      id: Date.now() + '_' + Math.random().toString(16).slice(2),
-      customer_id: dinevoAuth.getUser() ? dinevoAuth.getUser().id : null,
-      restaurant: name,
-      guests: guestParts.join(' + '),
-      meal: `${mealLabels[state.meal] || 'Dinner'} · ${bookingDateISO()} · ${formatTime(state.time) || '8:30 PM'}`,
-      dist: r ? r.dist : '—',
-      bill: billVal,
-      pref: foodLabels[state.foodType] || 'No preference specified',
-      cuisine: state.cuisines.length ? state.cuisines.join(', ') : 'Any cuisine',
-      ts: Date.now()
-    });
-  });
-  const { error } = await sb.from('requests').insert(rows);
-  if(error) throw error;
+  if(!dinevoAuth.getUser()) throw new Error('Please sign in first.');
+  for(const step of [2,3,4,5,7]){const err=validateStep(step);if(err)throw new Error(err);}
+  const ids=[...selectedRests].map(name=>restaurantData.find(r=>r.name===name)?.id).filter(Boolean).sort();
+  const payload={p_restaurants:ids,p_start:new Date(bookingDateISO()+'T'+state.time+':00+05:30').toISOString(),p_party:state.adults+state.kids,p_bill:Math.round(Number(String(state.bill==='Custom'?state.customBillValue:state.bill).replace(/[^0-9.]/g,''))*100),p_preferences:{food:foodLabels[state.foodType],cuisines:state.cuisines.join(', '),meal:mealLabels[state.meal],adults:state.adults,kids:state.kids}};
+  const signature=JSON.stringify(payload);
+  if(!quoteAttempt||quoteAttempt.signature!==signature)quoteAttempt={signature,id:crypto.randomUUID()};
+  const {data,error}=await sb.rpc('d2_request_quotes',{...payload,p_batch:quoteAttempt.id});
+  if(error)throw error;
+  quoteAttempt=null;
+  return data;
 }
 
 let trackedRests = new Set();
@@ -1941,16 +1927,15 @@ document.getElementById('sendReqBtn').onclick = async ()=>{
   btn.textContent = 'Sending…';
   try{
     await pushRequestsToStorage();
-    selectedRests.forEach(name => trackedRests.add(name));
+    
     selectedRests.clear();
     syncRequestSelection();
     saveTrackedRests();
     showToast(`Request sent to ${n} restaurant${n>1?'s':''}.`);
-    renderStatusTracker();
-    document.getElementById('statusTracker').scrollIntoView({behavior:'smooth', block:'start'});
+    document.getElementById('statusTracker').innerHTML='<p>Requests sent. Compare offers and contact each restaurant in your booking centre.</p><a class="btn-primary" href="booking-centre.html?tab=bookings">View requests & offers →</a>'; document.getElementById('resultsOverlay')?.classList.remove('show'); location.href='booking-centre.html?tab=requests';
   }catch(error){
     console.error('Request failed:', error);
-    showToast('Request not sent. Check your connection and booking details, then try again.', '⚠️');
+    showToast(error.message || 'Request not sent. Please retry.', '⚠️');
   }finally{
     btn.disabled = false;
     btn.textContent = 'Send Request →';
@@ -2396,7 +2381,7 @@ function renderProfileFavorites(){
 document.getElementById('favProfileRow').onclick = ()=> toggleRow('favProfileRow','panel-favorites', renderProfileFavorites);
 
 /* ---- Bookings (reuses existing offersList + renderOffers) ---- */
-document.getElementById('bookingsRow').onclick = ()=> toggleRow('bookingsRow','bookingsHistoryPanel', ()=>{ _offersSig = null; renderOffers(); });
+document.getElementById('bookingsRow').onclick = ()=>{location.href='booking-centre.html?tab=bookings';};
 
 /* ---- Payments (UPI mock) ---- */
 document.getElementById('row-payments').onclick = ()=> toggleRow('row-payments','panel-payments');
@@ -2502,14 +2487,8 @@ document.querySelectorAll('.app-dock button').forEach(button=>button.onclick=()=
   const tab=button.dataset.destination;
   closeResultsPage(); closeUserProfilePage();
   if(tab==='home') window.scrollTo({top:0,behavior:'smooth'});
-  if(tab==='requests') openResultsPage();
-  if(tab==='offers'||tab==='bookings'){
-    openUserProfilePage(tab);
-    renderOffers();
-    const panel=document.getElementById('bookingsHistoryPanel');
-    if(!panel.classList.contains('open')) document.getElementById('bookingsRow').click();
-    document.getElementById('bookingsRow').scrollIntoView({block:'start',behavior:'smooth'});
-  }
+  if(tab==='requests') location.href='booking-centre.html?tab=requests';
+  if(tab==='offers'||tab==='bookings') location.href='booking-centre.html?tab='+tab;
   setDiningTab(tab);
 });
 const diningObserver=new MutationObserver(()=>{
