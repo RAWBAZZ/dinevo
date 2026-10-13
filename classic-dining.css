@@ -1,0 +1,36 @@
+/* Original Dinevo typography and compact dashboard proportions. Admin is independent. */
+:root{--line:#2a251a;--dim:#9a9686}
+body{font-family:Manrope,sans-serif;font-size:13px}
+header{max-width:none;position:sticky;top:0;z-index:20;padding:16px 20px;background:rgba(8,7,5,.94);backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:10px;letter-spacing:normal}
+.brand img{width:28px;height:28px;object-fit:contain}
+.brand b{font-family:Michroma,sans-serif;font-size:14px;letter-spacing:.08em}
+.brand small{display:block;font-size:10px;font-weight:500;text-transform:uppercase;color:var(--dim);letter-spacing:.08em}
+main{max-width:640px;padding:0 18px}
+h1{font-family:Michroma,sans-serif;font-size:18px;margin:26px 0 18px}
+h2{font-size:18px}h3{font-size:15px}
+#intro:empty{display:none}
+#tabs{gap:8px;flex-wrap:nowrap;border-bottom:1px solid var(--line);margin:26px 0 18px;overflow-x:auto;align-items:flex-start}
+#tabs>button{border:0;border-radius:0;background:transparent;padding:10px 4px;margin-right:12px;font-size:12.5px;white-space:nowrap}
+#tabs>button[aria-current=true]{border-bottom:2px solid #c9a227}
+.restaurant-tools{margin:0;padding:10px 0;font-size:12px;flex-shrink:0}
+.restaurant-tools button{display:block;font-size:12px;padding:6px 10px;margin:6px 0}
+.card,.empty{padding:18px;border-radius:16px;margin:16px 0}
+.card h2{margin:4px 0 12px}
+.badge{font-size:10px;padding:4px 9px;margin-bottom:8px}
+.booking-glance{color:var(--dim);font-size:12.5px}
+.card details{font-size:12px;margin:12px 0}
+dl div{padding:8px 0;font-size:12.5px}
+.note{padding:12px;font-size:12px;border-radius:12px}
+.actions{gap:8px;margin:16px 0 0}
+.actions button{font-size:12px;padding:10px 14px}
+.actions button:first-child:not(.danger){background:linear-gradient(115deg,#8a6f22,#f1d68c);color:#080705;font-weight:800}
+input,select,textarea{font-size:13px;border-color:var(--line)}
+#partner-ownership{padding:14px 16px;border-radius:14px}
+#partner-ownership h2{font-family:Michroma,sans-serif;font-size:13px}
+#partner-ownership #owned-restaurants{display:none}
+#partner-ownership label{margin:8px 0}
+#claim-intro{font-size:12px}
+dialog{font-family:Manrope,sans-serif;border-radius:18px}
+footer{font-size:10px}
+@media(max-width:520px){header{padding:16px 20px}main{padding:0 18px}.card{padding:18px}#tabs>button{margin-right:6px}dialog{padding:18px}}
