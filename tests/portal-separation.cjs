@@ -19,9 +19,9 @@ const root=path.join(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'
  w.eval('let restaurantData=[],statusMap={};const favorites=new Set();const selectedRests=new Set();function buildRestaurants(){}function renderFavorites(){}function renderEvents(){}function syncRequestSelection(){}');
  w.eval(html.slice(html.indexOf('async function loadStatuses(){'),html.indexOf('function waitBadge')));
  w.favorites=new w.Set();w.selectedRests=new w.Set();
- w.eval(html.slice(html.indexOf('function miniCard(r, i){'),html.indexOf('function syncRequestSelection()')));
+ w.eval(html.slice(html.indexOf('function miniCard(r,i){'),html.indexOf('function syncRequestSelection()')));
  await w.loadStatuses();assert.deepEqual(activeFilter,['active',true]);assert.equal(w.eval('restaurantData.length'),10);
- w.document.querySelector('#resultsGrid').innerHTML=w.eval('restaurantData.map(miniCard).join(\'\')');assert.equal(w.document.querySelectorAll('#resultsGrid article').length,10);assert.equal(w.document.querySelector('#resultsGrid script'),null);assert.equal(w.document.querySelectorAll('#resultsGrid a[href^="booking-centre.html?restaurant="]').length,10);
+ w.document.querySelector('#resultsGrid').innerHTML=w.eval('restaurantData.map(miniCard).join(\'\')');assert.equal(w.document.querySelectorAll('#resultsGrid article').length,10);assert.equal(w.document.querySelector('#resultsGrid script'),null);assert.equal(w.document.querySelectorAll('#resultsGrid .select-btn-sm').length,10);
  assert.ok(!html.includes('OBAMA MAMA'));assert.ok(!html.includes("name:'Copper & Clove'"));dom.window.close();
  console.log('Portal tests passed: separate sessions/logins, no cross-portal links, active-only catalogue, 10 cards, escaped names and live booking links.');
 })().catch(e=>{console.error(e);process.exitCode=1});

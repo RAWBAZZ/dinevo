@@ -791,59 +791,10 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
   .wnav-btn{ padding:11px 20px; font-size:11px; }
 }
 
-/* App-style preview: original Dinevo colour tokens are unchanged. */
-body{padding-bottom:110px;}
-body>nav{padding:16px 28px;border-bottom:1px solid var(--line);background:var(--bg);}
-.nav-links{gap:20px;font-size:11px;}
-.hero{min-height:auto;padding:100px 20px 42px;}
-.hero-logo-wrap{width:110px;height:110px;}
-.hero h1{font-family:'Manrope',sans-serif;font-size:clamp(34px,5vw,64px);letter-spacing:-.055em;line-height:1.08;max-width:740px;margin-top:18px;}
-.hero .eyebrow{font-size:10px;letter-spacing:.18em;}
-.hero p.lead{max-width:470px;font-size:15px;line-height:1.7;margin:18px auto 0;color:var(--text-dim);}
-.hero-ctas{margin-top:26px;gap:10px;}
-.hero-scroll,.stat-strip{display:none;}
-section{padding:64px 0;scroll-margin-top:90px;}
-.wizard{padding-top:24px;}
-.wizard-card{border-radius:26px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.results-page{padding-bottom:125px;}
-.results-head h3{font-family:'Manrope',sans-serif;font-weight:700;letter-spacing:-.03em;}
-.results-head{padding:16px 0;}
-.results-grid{gap:12px;}
-.rest-mini{border-radius:20px;overflow:hidden;transition:transform .2s,border-color .2s;}
-.rest-mini:hover{transform:translateY(-3px);}
-.rest-mini-body{padding:15px;}
-.rest-mini-top h5{font-size:15px;}
-.rest-mini-meta{font-size:12px;color:var(--text-dim);}
-.rest-mini-disc{border-style:solid;padding:7px 9px;font-size:11px;}
-.offer-card{border-radius:22px;padding:18px;}
-#sendRequestBar{bottom:94px!important;border-radius:22px;padding:16px;}
-#sendReqBtn{min-height:46px;}
-.app-dock{position:fixed;z-index:850;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;width:min(420px,calc(100% - 32px));gap:4px;padding:7px;background:var(--surface-2);border:1px solid var(--line);border-radius:28px;box-shadow:0 12px 40px rgba(0,0,0,.45);}
-.app-dock button{display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;min-height:54px;padding:8px 4px;border-radius:21px;font:600 10px 'Manrope',sans-serif;color:var(--text-dim);transition:background .2s,color .2s;}
-.app-dock button[aria-current="page"]{background:var(--surface);color:var(--gold-hi);box-shadow:inset 0 0 0 1px var(--gold-dim);}
-.app-dock svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
-button:focus-visible,a:focus-visible{outline:2px solid var(--gold-hi);outline-offset:4px;}
-.profile-overlay{z-index:880;}
-.payment-overlay{z-index:950;}
-@media(max-width:600px){
- body>nav{padding:14px 18px;}.nav-brand span{font-size:13px;}.nav-cta{font-size:10px;padding:10px 14px;}
- .hero{padding-top:88px;}.hero-logo-wrap{width:88px;height:88px;}.hero h1{font-size:38px;}.hero p.lead{font-size:13px;}
- .hero-ctas .btn-primary,.hero-ctas .btn-ghost{padding:14px 20px;font-size:11px;}
- .results-page{padding-left:16px;padding-right:16px;}.results-head h3{font-size:19px;}
- .results-grid{grid-template-columns:1fr;}.results-grid .rest-mini{display:grid;grid-template-columns:90px 1fr;}
- .results-grid .rest-mini-media{height:100%;min-height:150px;}.results-grid .rest-mini-body{min-width:0;}
- .results-search input{border-radius:18px;}.offer-card .disc-badge{font-size:19px;}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}
-
-
-body:has(.results-overlay.show) #authAvatarWrap,
-body:has(.payment-overlay.show) #authAvatarWrap,
-body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
-#userProfileOverlay.dining-only .results-page > :not(.results-head):not(:has(#offersList)){display:none;}
-#userProfileOverlay.dining-only .profile-group:has(#offersList) > :not(#bookingsRow):not(#bookingsHistoryPanel){display:none;}
-#userProfileOverlay.dining-only #bookingsRow{display:none;}
-#userProfileOverlay.dining-only #bookingsHistoryPanel{max-height:none!important;}
+body:has(.results-overlay.show) #authAvatarWrap,body:has(.payment-overlay.show) #authAvatarWrap,body:has(.profile-overlay.show) #authAvatarWrap{display:none!important}
+#events,#notification,#matching,.app-dock{display:none!important}
+#sendRequestBar{z-index:10;background:var(--surface);border:1px solid var(--line);}
+#sendRequestBar>p{display:none}
 </style>
 </head>
 <body>
@@ -865,14 +816,14 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <a href="#flow">How it works</a>
     <a href="#book">Book a table</a>
     <a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a>
-    <a href="booking-centre.html">Booking centre</a>
+    <a href="booking-centre.html?tab=requests">Requests</a><a href="booking-centre.html?tab=offers">Offers</a><a href="booking-centre.html?tab=bookings">My Bookings</a>
     <a href="#favorites">Favorites</a>
-    <a href="#events">Events</a>
+    
     <a href="#dishes">Cuisine</a>
-    <a href="#matching">Smart matching</a>
+    
     
   </div>
-  <a href="booking-centre.html" class="nav-cta">Find a table</a>
+  <a href="#book" class="nav-cta">Start booking</a>
 </nav>
 
 <!-- HERO -->
@@ -882,17 +833,10 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <video src="logo-video.mp4" poster="logo.png" autoplay muted loop playsinline webkit-playsinline></video>
   </div>
   <div class="eyebrow" style="justify-content:center;margin-top:8px;">RESERVATIONS, REIMAGINED</div>
-  <h1>Your next table.<br><span class="accent">A better deal.</span></h1>
-  <p class="lead">Choose your evening. Get offers from restaurants. Make it a meal to remember.</p>
+  <h1>The Future of<br><span class="accent">Restaurant Bookings</span></h1>
   <div class="hero-ctas">
     <a href="#book" class="btn-primary">Reserve a table →</a>
     <a href="#flow" class="btn-ghost">See how it works</a>
-  </div>
-  <div class="stat-strip">
-    <div class="stat"><b>1,200+</b><span>Partner restaurants</span></div>
-    <div class="stat"><b>18%</b><span>Avg. discount won</span></div>
-    <div class="stat"><b>&lt;10min</b><span>Response time</span></div>
-    <div class="stat"><b>4.8★</b><span>Diner rating</span></div>
   </div>
   <div class="hero-scroll"><span>Scroll</span><div class="line"></div></div>
 </header>
@@ -1253,7 +1197,7 @@ body:has(.profile-overlay.show) #authAvatarWrap{display:none!important;}
     <h3>DINEVO</h3>
     <p>The future of restaurant bookings — where restaurants compete for your table, not the other way around.</p>
     <div class="foot-links">
-      <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a><a href="#matching">Smart matching</a>
+      <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a>
     </div>
     <div class="foot-bottom">© 2026 DINEVO. Concept &amp; interface preview.</div>
   </div>
@@ -1681,9 +1625,12 @@ function tagFor(type){
   return {c:'veg', l:type==='jain'?'Jain':type==='vegan'?'Vegan':'Pure Veg'};
 }
 
-function miniCard(r, i){
-  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  return `<article class="rest-mini reveal in"><div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button></div><p class="rest-mini-meta">${safe(r.city||'Location to be added')} · ${safe(r.cuisine)}</p>${r.is_test?'<p class="rest-mini-disc">TEST LISTING · No real restaurant reservation</p>':''}<button class="select-btn-sm ${selectedRests.has(r.name)?'sel':''}" data-name="${safe(r.name)}">${selectedRests.has(r.name)?'✓ Added':'Select for quote'}</button><a class="btn-ghost" href="booking-centre.html?restaurant=${encodeURIComponent(r.id)}">View availability →</a></div></article>`;
+function miniCard(r,i){
+ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const selected=selectedRests.has(r.name);
+ return `<article class="rest-mini reveal in" style="transition-delay:${i*40}ms">
+ <div class="rest-mini-media" style="background:#2b2414"><span class="tag-mini both">${r.is_test?'Test restaurant':'Restaurant'}</span><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button>🍽️</div>
+ <div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5></div><div class="rest-mini-meta">📍 ${safe(r.city||'Location coming soon')} · ${safe(r.cuisine)}</div><div class="rest-mini-disc">Request your dining offer</div><div class="rest-mini-foot"><div class="cost">Your budget</div><button class="select-btn-sm ${selected?'sel':''}" data-name="${safe(r.name)}" aria-pressed="${selected}">${selected?'✓ Added':'Select'}</button></div></div></article>`;
 }
 
 function syncRequestSelection(){
@@ -1691,7 +1638,7 @@ function syncRequestSelection(){
   document.getElementById('sendRequestBar').style.display = selectedRests.size ? '' : 'none';
   document.querySelectorAll('.select-btn-sm').forEach(button=>{
     const selected = selectedRests.has(button.dataset.name);
-    button.classList.toggle('sel', selected);
+    button.classList.toggle('sel', selected);button.setAttribute('aria-pressed',String(selected));
     button.textContent = selected ? '✓ Added' : 'Select';
   });
 }
