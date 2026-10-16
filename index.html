@@ -1350,7 +1350,7 @@ const steps = [
         ${opt('🔎','Search a location','location','search')}
       </div>`;
     }},
-  { title:"How far can we look?", sub:"Select your preferred distance. Demo listings do not have verified locations.",
+  { title:"How far can we look?", sub:"Select your preferred distance. Some restaurant locations may not be verified yet.",
     render: (body)=>{
       body.innerHTML = `<div class="option-grid">
         ${opt('①','Within 1 KM','distance','1')}
@@ -1629,7 +1629,7 @@ function miniCard(r,i){
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const selected=selectedRests.has(r.name);
  return `<article class="rest-mini reveal in" style="transition-delay:${i*40}ms">
- <div class="rest-mini-media" style="background:#2b2414"><span class="tag-mini both">${r.is_test?'Demo restaurant':'Restaurant'}</span><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button>🍽️</div>
+ <div class="rest-mini-media" style="background:#2b2414"><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button>🍽️</div>
  <div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5></div><div class="rest-mini-meta">📍 ${safe(r.city||'Location coming soon')} · ${safe(r.cuisine)}</div><div class="rest-mini-disc">Request your dining offer</div><div class="rest-mini-foot"><div class="cost">Your budget</div><button class="select-btn-sm ${selected?'sel':''}" data-name="${safe(r.name)}" aria-pressed="${selected}">${selected?'✓ Added':'Select'}</button></div></div></article>`;
 }
 
@@ -2119,7 +2119,6 @@ function openPayment(o){
     </div>
     <p class="pay-note">Discount applies to eligible items under the restaurant’s T&amp;C. Cold drinks and other excluded items may not qualify. The token is deducted after the eligible discount is applied.</p>
     <a href="booking-centre.html" class="btn-ghost" style="display:block;text-align:center;margin:16px 0">Open live booking centre →</a>
-    <a href="booking-preview.html" class="btn-ghost" style="display:block;text-align:center;margin:16px 0">Try the ₹100 demo wallet flow →</a>
     <button class="pay-btn" id="payNowBtn" disabled>Payments coming soon</button>
     <div class="pay-note">Online payments are not available yet. No money will be collected and this preview will not confirm a booking.</div>
   `;
