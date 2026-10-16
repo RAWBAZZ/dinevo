@@ -70,6 +70,17 @@ begin
  values(b.customer_id,b.id,'counter_offer_accepted',notice_dedupe);
 end $$;
 
+create or replace function public.d2_process_notices() returns void language plpgsql security definer set search_path='' as $$
+declare expired record;
+begin
+ for expired in update public.d2_bookings set status='cancelled',cancellation_reason='Hold expired',expires_at=null where status in('requested','offered','counter_offered','awaiting_payment') and expires_at<=now() returning id loop perform public.d2_event(expired.id,'hold_expired');end loop;
+ insert into public.d2_notices(recipient,booking_id,kind,dedupe) select customer_id,id,'reminder_24h',id::text||':reminder24' from public.d2_bookings where status='confirmed' and starts_at between now() and now()+interval '24 hours' on conflict(dedupe) do nothing;
+ insert into public.d2_notices(recipient,booking_id,kind,dedupe) select customer_id,id,'reminder_2h',id::text||':reminder2' from public.d2_bookings where status='confirmed' and starts_at between now() and now()+interval '2 hours' on conflict(dedupe) do nothing;
+ insert into public.d2_notices(recipient,slot_id,kind,dedupe)
+ select w.customer_id,w.slot_id,'table_available',w.id::text||':available' from public.d2_waitlist w join public.d2_slots s on s.id=w.slot_id where s.open and exists(select 1 from public.d2_restaurants r where r.id=s.restaurant_id and r.active) and s.starts_at>now() and w.notified_at is null and s.capacity-coalesce((select sum(b.party) from public.d2_bookings b where b.slot_id=s.id and b.status not in('cancelled','completed')),0)>=w.party on conflict(dedupe) do nothing;
+ update public.d2_waitlist w set notified_at=now() where notified_at is null and exists(select 1 from public.d2_notices n where n.dedupe=w.id::text||':available');
+end $$;
+
 revoke all on function public.d2_counter_offer(uuid,int),public.d2_accept_counter(uuid) from public,anon,authenticated;
 grant execute on function public.d2_counter_offer(uuid,int),public.d2_accept_counter(uuid) to authenticated;
 
