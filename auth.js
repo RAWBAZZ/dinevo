@@ -18,6 +18,15 @@ window.dinevoAuth = (function(){
     style.textContent = `
       #authGate{position:fixed;inset:0;z-index:2000;background:#080705;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;font-family:'Manrope',sans-serif;color:#eae6da;text-align:center;}
       #authGate .authIcon{width:56px;height:56px;border-radius:16px;background:#15130d;border:1px solid #2a251a;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:20px;}
+      #authGate .authBrand{width:min(240px,60vw);height:140px;flex-shrink:0;margin-bottom:16px;}
+      #authGate .authBrand video{width:100%;height:100%;object-fit:contain;}
+      #authLaunch{position:fixed;inset:0;z-index:2100;background:#080705;display:grid;place-items:center;overflow:hidden;pointer-events:auto;transition:background .65s ease;}
+      #authLaunch.launching{background:transparent;}
+      #authLaunch .launchBrand{width:min(280px,70vw);text-align:center;filter:drop-shadow(0 0 24px #c9a22766);}
+      #authLaunch video{width:100%;height:180px;object-fit:contain;}
+      #authLaunch .launchName{font-family:'Michroma',sans-serif;font-size:24px;letter-spacing:.22em;color:#f1d68c;}
+      #authLaunch .launchStatus{color:#9a9686;font:12px 'Manrope',sans-serif;margin-top:16px;}
+      @media(prefers-reduced-motion:reduce){#authLaunch{transition:none;}#authGate .authBrand video{display:none;}#authGate .authBrand{background:url('logo-icon.png') center/contain no-repeat;}}
       #authGate h2{font-family:'Michroma',sans-serif;font-size:18px;margin-bottom:10px;letter-spacing:.03em;}
       #authGate p{font-size:13px;color:#9a9686;max-width:320px;line-height:1.65;margin-bottom:26px;}
       #authGate input{width:100%;max-width:320px;background:#15130d;border:1px solid #2a251a;border-radius:100px;padding:14px 20px;color:#eae6da;font-size:14px;text-align:center;margin-bottom:14px;font-family:inherit;}
@@ -47,7 +56,7 @@ window.dinevoAuth = (function(){
     injectStyles();
     if(document.getElementById('authGate')) return;
     const gate = el(`<div id="authGate">
-      <div class="authIcon">${icon || '🔐'}</div>
+      <div class="authBrand"><video src="logo-video.mp4" poster="logo-icon.png" autoplay muted loop playsinline aria-label="Dinevo animated logo"></video></div>
       <h2>DINEVO ${appName}</h2>
       <div class="authTabs">
         <button class="authTab active" data-mode="login">Log In</button>
@@ -145,6 +154,36 @@ window.dinevoAuth = (function(){
   function hideGate(){
     const gate = document.getElementById('authGate');
     if(gate) gate.remove();
+  }
+
+  function launchHome(){
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduced) { hideGate(); return; }
+    const overlay = el(`<div id="authLaunch" role="status" aria-label="Welcome to Dinevo"><div class="launchBrand"><video src="logo-video.mp4" poster="logo-icon.png" autoplay muted playsinline></video><div class="launchName">DINEVO</div><div class="launchStatus">Welcome aboard</div></div></div>`);
+    document.body.appendChild(overlay);
+    const brand = overlay.querySelector('.launchBrand');
+    let finished = false;
+    const finish = ()=>{ if(finished) return; finished = true; overlay.remove(); hideGate(); };
+    // A hard deadline also releases the UI if media or animation APIs fail.
+    const deadline = setTimeout(finish, 2200);
+    setTimeout(()=>{
+      if(finished) return;
+      hideGate();
+      overlay.classList.add('launching');
+      const target = document.querySelector('.nav-brand') || document.querySelector('nav');
+      const from = brand.getBoundingClientRect();
+      const to = target && target.getBoundingClientRect();
+      const dx = to ? to.left + to.width/2 - (from.left + from.width/2) : 0;
+      const dy = to ? to.top + to.height/2 - (from.top + from.height/2) : -window.innerHeight*.55;
+      if(!brand.animate){ clearTimeout(deadline); finish(); return; }
+      const flight = brand.animate([
+        {transform:'translate(0,0) scale(1)',opacity:1},
+        {transform:'translate(0,12px) scale(1.08)',opacity:1,offset:.18},
+        {transform:`translate(${dx}px,${dy}px) scale(.12)`,opacity:0}
+      ],{duration:760,easing:'cubic-bezier(.65,0,.25,1)',fill:'forwards'});
+      flight.onfinish = ()=>{clearTimeout(deadline);finish();};
+      flight.oncancel = finish;
+    },650);
   }
 
   function showResetPasswordForm(){
@@ -268,8 +307,10 @@ window.dinevoAuth = (function(){
   }
 
   function onAuthed(user){
+    if(!user || currentUser) return;
     currentUser = user;
-    hideGate();
+    if(document.getElementById('authGate')) launchHome();
+    else hideGate();
     showTopbar(user.email);
     resolveReady(user);
   }
@@ -308,4 +349,5 @@ window.dinevoAuth = (function(){
 
   return { init, ready, getUser: ()=> currentUser, onProfileClick };
 })();
+
 
