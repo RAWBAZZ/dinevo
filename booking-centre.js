@@ -95,7 +95,7 @@ if(action==='quote-offer'){
  return;
 }
 if(action==='counter-offer'){
- modal('Ask for a counter offer',`<p>${esc(restaurant(b.restaurant_id))} has offered <strong>${b.discount}% off</strong> on eligible items.</p><p>Enter the total discount you would like the restaurant to consider.</p>${input('counter_discount','Your requested discount (%)','number',`required min="0" max="100" step="1" value="${b.discount}"`)}<p class="note">Your request goes to the restaurant’s Counter offers queue. The current offer stays unchanged until the restaurant responds.</p>`,'Send counter offer',f=>async f=>{await rpc('d2_counter_offer',{p_booking:id,p_discount:Number(f.get('counter_discount'))});const {data,error}=await sb.from('d2_bookings').select('status').eq('id',b.id).single();if(error)throw new Error(error.message);if(data.status==='confirmed')tab='My bookings';});
+ modal('Ask for a counter offer',`<p>${esc(restaurant(b.restaurant_id))} has offered <strong>${b.discount}% off</strong> on eligible items.</p><p>Enter the total discount you would like the restaurant to consider.</p>${input('counter_discount','Your requested discount (%)','number',`required min="0" max="100" step="1" value="${b.discount}"`)}<p class="note">Your request goes to the restaurant’s Counter offers queue. The current offer stays unchanged until the restaurant responds.</p>`,'Send counter offer',async f=>{await rpc('d2_counter_offer',{p_booking:id,p_discount:Number(f.get('counter_discount'))});const {data,error}=await sb.from('d2_bookings').select('status').eq('id',b.id).single();if(error)throw new Error(error.message);if(data.status==='confirmed')tab='My bookings';});
  return;
 }
 if(action==='accept-counter'){
