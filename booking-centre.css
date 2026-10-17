@@ -5,3 +5,5 @@
 /* Partner profile and account access */
 body[data-partner="true"] #authAvatarWrap{display:block!important}
 .partner-profile>.card-top{align-items:center}.partner-profile .eyebrow{margin:0 0 4px}.profile-account{margin:8px 0 22px}.profile-account dd{overflow-wrap:anywhere}.profile-restaurant-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px;margin:12px 0}.profile-restaurant{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#100e09}.profile-restaurant .badge{margin:0;flex-shrink:0}.partner-profile details{padding:12px 14px;border:1px solid var(--line);border-radius:16px}.partner-profile details[open]{border-color:#78642c}.partner-profile form{margin-top:12px}.profile-help{margin-top:24px;padding-top:8px;border-top:1px solid var(--line)}.profile-help p{margin:8px 0;color:var(--dim);font-size:14px}.profile-help strong{color:var(--text)}
+
+.profile-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.profile-actions button{font-size:13px}
