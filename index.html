@@ -1662,12 +1662,21 @@ let statusMap = {};
 async function loadStatuses(){
   try {
     await dinevoAuth.ready;
-    const {data,error}=await sb.from('d2_restaurants').select('id,name,city,cuisines,is_test').eq('active',true).order('name');
+    const [{data,error},{data:availableSlots,error:availabilityError}]=await Promise.all([
+      sb.from('d2_restaurants').select('id,name,city,cuisines,is_test').eq('active',true).order('name'),
+      sb.rpc('d2_available')
+    ]);
     if(error) throw error;
-    restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:true}));
-    for(const name of selectedRests) if(!restaurantData.some(r=>r.name===name)) selectedRests.delete(name); statusMap={};
-    buildRestaurants();renderFavorites();renderEvents();syncRequestSelection();
-  } catch(e) { document.getElementById('resultsGrid').textContent='Could not load restaurants. Please refresh to retry.'; }
+    if(availabilityError) throw availabilityError;
+    const openIds=new Set((availableSlots||[]).filter(slot=>Number(slot.remaining)>0).map(slot=>slot.restaurant_id));
+    restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:openIds.has(r.id)}));
+    for(const name of selectedRests) if(!restaurantData.some(r=>r.name===name&&r.open)) selectedRests.delete(name);
+    statusMap={};buildRestaurants();renderFavorites();renderEvents();syncRequestSelection();
+  } catch(e) {
+    restaurantData=restaurantData.map(r=>({...r,open:false}));
+    selectedRests.clear();buildRestaurants();renderFavorites();syncRequestSelection();
+    document.getElementById('resultsGrid').textContent='Could not confirm availability. Please refresh; if sign-in fails, check that your device date and time are set automatically.';
+  }
 }
 function waitBadge(name){
   const s = statusMap[name];
@@ -1686,10 +1695,10 @@ function tagFor(type){
 
 function miniCard(r,i){
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const selected=selectedRests.has(r.name);
- return `<article class="rest-mini reveal in" style="transition-delay:${i*40}ms">
+ const selected=selectedRests.has(r.name), canSelect=!!r.open;
+ return `<article class="rest-mini reveal in ${canSelect?'':'availability-closed'}" style="transition-delay:${i*40}ms">
  <div class="rest-mini-media" style="background:#2b2414"><button class="fav-heart ${favorites.has(r.name)?'on':''}" data-fav="${safe(r.name)}" aria-label="Save restaurant">${favorites.has(r.name)?'♥':'♡'}</button>🍽️</div>
- <div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5></div><div class="rest-mini-meta">📍 ${safe(r.city||'Location coming soon')} · ${safe(r.cuisine)}</div><div class="rest-mini-disc">Request your dining offer</div><div class="rest-mini-foot"><div class="cost">Your budget</div><button class="select-btn-sm ${selected?'sel':''}" data-name="${safe(r.name)}" aria-pressed="${selected}">${selected?'✓ Added':'Select'}</button></div></div></article>`;
+ <div class="rest-mini-body"><div class="rest-mini-top"><h5>${safe(r.name)}</h5></div><div class="rest-mini-meta">📍 ${safe(r.city||'Location coming soon')} · ${safe(r.cuisine)}</div><div class="rest-mini-disc ${canSelect?'':'opening-soon'}">${canSelect?'Request your dining offer':'Opening soon · availability is closed'}</div><div class="rest-mini-foot"><div class="cost">${canSelect?'Your budget':'Not accepting requests'}</div><button class="select-btn-sm ${selected?'sel':''}" data-name="${safe(r.name)}" aria-pressed="${selected}" ${canSelect?'':'disabled aria-disabled="true"'}>${selected?'✓ Added':canSelect?'Select':'Opening soon'}</button></div></div></article>`;
 }
 
 function syncRequestSelection(){
@@ -1707,7 +1716,8 @@ function wireCardButtons(scope){
     btn.onclick = (e)=>{
       e.stopPropagation();
       if(document.getElementById('sendReqBtn').disabled) return;
-      const n = btn.dataset.name;
+      const n = btn.dataset.name, restaurant=restaurantData.find(r=>r.name===n);
+      if(!restaurant?.open){ showToast('This restaurant is opening soon and is not accepting requests yet.', 'ℹ️'); return; }
       if(selectedRests.has(n)){ selectedRests.delete(n); btn.classList.remove('sel'); btn.textContent='Select'; }
       else{ selectedRests.add(n); btn.classList.add('sel'); btn.textContent='✓ Added'; }
       syncRequestSelection();
@@ -1774,6 +1784,7 @@ setInterval(loadStatuses, 15000);
 try{
   sb.channel('status-live-customer')
     .on('postgres_changes', { event:'*', schema:'public', table:'d2_restaurants' }, loadStatuses)
+    .on('postgres_changes', { event:'*', schema:'public', table:'d2_slots' }, loadStatuses)
     .subscribe();
 }catch(e){ console.error('Realtime subscribe failed:', e); }
 
@@ -1911,6 +1922,13 @@ async function pushRequestsToStorage(){
   if(!dinevoAuth.getUser()) throw new Error('Please sign in first.');
   for(const step of [2,3,4,5,7]){const err=validateStep(step);if(err)throw new Error(err);}
   const ids=[...selectedRests].map(name=>restaurantData.find(r=>r.name===name)?.id).filter(Boolean).sort();
+  if(ids.length!==selectedRests.size) throw new Error('Refresh the restaurant list and select again.');
+  const {data:liveSlots,error:availabilityError}=await sb.rpc('d2_available');
+  if(availabilityError) throw availabilityError;
+  const party=state.adults+state.kids;
+  const openForParty=new Set((liveSlots||[]).filter(slot=>Number(slot.remaining)>=party&&Number(slot.max_party)>=party).map(slot=>slot.restaurant_id));
+  const closed=ids.filter(id=>!openForParty.has(id)).map(id=>restaurantData.find(r=>r.id===id)?.name||'A selected restaurant');
+  if(closed.length) throw new Error(closed.join(', ')+' is opening soon and cannot receive a request right now. Remove it and try again.');
   const payload={p_restaurants:ids,p_start:new Date(bookingDateISO()+'T'+state.time+':00+05:30').toISOString(),p_party:state.adults+state.kids,p_bill:Math.round(Number(String(state.bill==='Custom'?state.customBillValue:state.bill).replace(/[^0-9.]/g,''))*100),p_preferences:{food:foodLabels[state.foodType],cuisines:state.cuisines.join(', '),meal:mealLabels[state.meal],adults:state.adults,kids:state.kids}};
   const signature=JSON.stringify(payload);
   if(!quoteAttempt||quoteAttempt.signature!==signature)quoteAttempt={signature,id:crypto.randomUUID()};
