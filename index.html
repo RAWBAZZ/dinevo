@@ -1211,6 +1211,61 @@ body:has(.results-overlay.show) #authAvatarWrap,body:has(.payment-overlay.show) 
 <script src="auth.js"></script>
 <script>
 dinevoAuth.init('Diner', '🍽️');
+/* The hero logo docks into the header; scrolling back reverses the same path. */
+(function initLogoDock(){
+  const slot = document.getElementById('heroLogo');
+  const source = slot && slot.querySelector('video');
+  const target = document.querySelector('.nav-brand img');
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if(!source || !target) return;
+  const flying = source.cloneNode(true);
+  flying.removeAttribute('id');
+  flying.setAttribute('aria-hidden','true');
+  flying.tabIndex = -1;
+  Object.assign(flying.style, {position:'fixed',left:'0',top:'0',margin:'0',objectFit:'contain',pointerEvents:'none',zIndex:'201',transformOrigin:'0 0',background:'var(--bg)'});
+  document.body.appendChild(flying);
+  let frame = 0;
+  function paint(){
+    frame = 0;
+    if(motion.matches){
+      flying.style.visibility = 'hidden';
+      source.style.visibility = '';
+      target.style.opacity = '';
+      flying.pause();
+      return;
+    }
+    const start = slot.getBoundingClientRect();
+    const end = target.getBoundingClientRect();
+    const scroll = Math.max(0,window.scrollY);
+    const originY = start.top + scroll;
+    const distance = Math.max(120,originY - end.top);
+    const progress = Math.min(1,scroll/distance);
+    const eased = progress*progress*(3-2*progress);
+    const width = start.width + (end.width-start.width)*eased;
+    const height = start.height + (end.height-start.height)*eased;
+    const x = start.left + (end.left-start.left)*eased;
+    const y = (originY-scroll)*(1-eased) + end.top*eased;
+    const handoff = Math.min(1,Math.max(0,(progress-.85)/.15));
+    source.style.visibility = 'hidden';
+    flying.style.visibility = progress === 1 ? 'hidden' : 'visible';
+    flying.style.width = start.width+'px';
+    flying.style.height = start.height+'px';
+    flying.style.transform = `translate3d(${x}px,${y}px,0) scale(${width/start.width},${height/start.height})`;
+    flying.style.borderRadius = (20*(1-eased))+'px';
+    flying.style.opacity = String(1-handoff);
+    flying.style.filter = `drop-shadow(0 10px ${40*(1-eased)}px rgba(201,162,39,${.35*(1-eased)}))`;
+    target.style.opacity = String(progress === 0 ? 1 : handoff);
+    if(progress === 1) flying.pause();
+    else if(flying.paused) { const playing = flying.play(); if(playing) playing.catch(()=>{}); }
+  }
+  function schedule(){ if(!frame) frame = requestAnimationFrame(paint); }
+  window.addEventListener('scroll',schedule,{passive:true});
+  window.addEventListener('resize',schedule);
+  window.addEventListener('pageshow',schedule);
+  motion.addEventListener('change',schedule);
+  if(window.ResizeObserver) new ResizeObserver(schedule).observe(slot);
+  paint();
+})();
 /* ================= REVEAL ON SCROLL ================= */
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries)=>{
@@ -2448,4 +2503,5 @@ const diningObserver=new MutationObserver(()=>{
 </script>
 </body>
 </html>
+
 
