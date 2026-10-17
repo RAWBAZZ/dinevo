@@ -758,6 +758,9 @@ footer p{ color:var(--text-faint); font-size:13.5px; max-width:420px; margin:0 a
 .foot-links{ display:flex; justify-content:center; gap:30px; margin:34px 0; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); flex-wrap:wrap; }
 .foot-links a:hover{ color:var(--gold-hi); }
 .foot-bottom{ margin-top:40px; padding-top:24px; border-top:1px solid var(--line); font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono'; }
+.made-with{ margin:26px auto 0; text-align:center; color:var(--text-dim); font-size:11px; line-height:1.8; letter-spacing:.14em; text-transform:uppercase; }
+.made-with strong{ display:inline-block; margin-top:3px; color:var(--gold-hi); font-family:'Michroma',sans-serif; font-size:13px; letter-spacing:.24em; font-weight:400; }
+.made-with .made-heart{ color:var(--gold-hi); font-size:14px; }
 
 @media(prefers-reduced-motion: reduce){
   *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
@@ -1200,6 +1203,7 @@ body:has(.results-overlay.show) #authAvatarWrap,body:has(.payment-overlay.show) 
       <a href="#flow">How it works</a><a href="#book">Book</a><a href="javascript:void(0)" onclick="openResultsPage()">Restaurants</a><a href="#dishes">Cuisine</a>
     </div>
     <div class="foot-bottom">© 2026 DINEVO. Concept &amp; interface preview.</div>
+    <div class="made-with" aria-label="Made with love in ULWE for the universe">Made with <span class="made-heart" aria-hidden="true">♥</span> in<br><strong>ULWE</strong><br><span>FOR THE UNIVERSE</span></div>
   </div>
 </footer>
 
