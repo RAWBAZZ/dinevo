@@ -1439,8 +1439,8 @@ const steps = [
       </div><div id="bookingTimeHint" style="font-size:12px;color:var(--text-dim);margin-top:10px;" aria-live="polite"></div><div style="display:none">
       </div>`;
       setTimeout(()=>{
-        const todayD = new Date();
-        const maxD = new Date(); maxD.setDate(maxD.getDate()+7);
+        const todayD = new Date(indiaNow().date+'T12:00:00Z');
+        const maxD = new Date(indiaDateOffset(7)+'T12:00:00Z');
         const toISO = localDateISO;
         const dateEl = document.getElementById('customDate');
         dateEl.min = toISO(todayD);
@@ -1530,6 +1530,7 @@ function renderStep(){
   steps[current].render(bodyEl);
   renderDots();
   wireStep();
+  syncMealOptions();
   const errEl = document.getElementById('stepError');
   if(errEl){ errEl.style.display = 'none'; errEl.textContent = ''; }
   document.getElementById('backBtn').disabled = current===0;
@@ -1539,6 +1540,7 @@ function renderStep(){
 function wireStep(){
   bodyEl.querySelectorAll('.opt[data-key]').forEach(el=>{
     el.onclick = ()=>{
+      if(el.dataset.key==='meal' && el.getAttribute('aria-disabled')==='true') return;
       state[el.dataset.key] = el.dataset.val;
       bodyEl.querySelectorAll(`.opt[data-key="${el.dataset.key}"]`).forEach(x=>x.classList.remove('sel'));
       el.classList.add('sel');
@@ -1580,55 +1582,72 @@ function wireStep(){
   });
 }
 
+function indiaNow(){
+  const parts = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+  const v = Object.fromEntries(parts.map(p=>[p.type,p.value]));
+  return {date:v.year+'-'+v.month+'-'+v.day, minutes:Number(v.hour)*60+Number(v.minute)};
+}
+const MEAL_WINDOWS = {breakfast:[360,719],lunch:[720,959],dinner:[1080,1379],latenight:[1200,1439]};
+function indiaDateOffset(days){
+  const base = new Date(indiaNow().date+'T12:00:00Z');
+  base.setUTCDate(base.getUTCDate()+days);
+  return base.toISOString().slice(0,10);
+}
 function bookingDateISO(){
-  const d = new Date();
-  if(state.date === 'Tomorrow') d.setDate(d.getDate()+1);
-  return state.date === 'Custom' ? state.customDateValue : localDateISO(d);
+  return state.date==='Custom' ? state.customDateValue : indiaDateOffset(state.date==='Tomorrow'?1:0);
+}
+function mealExpiredToday(meal){
+  const w=MEAL_WINDOWS[meal];
+  return !!w && indiaNow().minutes>=w[1];
+}
+function syncMealOptions(){
+  if(current!==2) return;
+  const today=state.date!=='Tomorrow' && !(state.date==='Custom' && state.customDateValue!==indiaNow().date);
+  bodyEl.querySelectorAll('.opt[data-key="meal"]').forEach(el=>{
+    const expired=today && mealExpiredToday(el.dataset.val);
+    el.style.opacity=expired?'.35':'';
+    el.style.cursor=expired?'not-allowed':'';
+    el.setAttribute('aria-disabled',String(expired));
+    if(expired){el.classList.remove('sel');el.title='This meal has ended today (India time)';}
+  });
+  if(today && mealExpiredToday(state.meal)) state.meal=null;
 }
 function syncBookingTimeUI(){
-  const input = document.getElementById('timeSlot');
-  const dateInput = document.getElementById('customDate');
+  const input=document.getElementById('timeSlot');
   if(!input) return;
-  const now = new Date();
-  const today = localDateISO(now);
-  const selected = bookingDateISO();
-  const ranges = {breakfast:['06:00','11:59'],lunch:['12:00','15:59'],dinner:['18:00','22:59'],latenight:['20:00','23:59']};
-  const range = ranges[state.meal] || ['00:00','23:59'];
-  let min = range[0];
-  if(selected === today){
-    const next = new Date(now.getTime()+60000);
-    const currentMin = String(next.getHours()).padStart(2,'0')+':'+String(next.getMinutes()).padStart(2,'0');
-    if(currentMin > min) min = currentMin;
-  }
-  input.min = min; input.max = range[1];
-  const note = document.getElementById('bookingTimeHint');
-  const expired = selected === today && min > range[1];
-  if(note) note.textContent = expired ? 'This meal slot has ended today. Choose another meal or date.' : 'Available time for '+(state.meal || 'your meal')+': '+min+'–'+range[1];
-  if(dateInput) dateInput.style.display = state.date === 'Custom' ? 'block' : 'none';
+  const dateInput=document.getElementById('customDate');
+  const now=indiaNow(), selected=bookingDateISO();
+  const window=MEAL_WINDOWS[state.meal]||[0,1439];
+  const minMinutes=selected===now.date?Math.max(window[0],now.minutes+1):window[0];
+  const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  input.min=hhmm(Math.min(minMinutes,1439));
+  input.max=hhmm(window[1]);
+  const expired=selected===now.date && minMinutes>window[1];
+  input.disabled=expired;
+  const note=document.getElementById('bookingTimeHint');
+  if(note) note.textContent=expired?'This meal slot has ended today (IST). Select another meal or date.':'Available time (IST): '+hhmm(minMinutes)+' – '+hhmm(window[1]);
+  if(dateInput) dateInput.style.display=state.date==='Custom'?'block':'none';
 }
 function bookingTimeError(){
-  const date = bookingDateISO();
+  const date=bookingDateISO(), now=indiaNow();
   if(!date) return 'Please pick a specific date.';
-  const now = new Date();
-  const today = localDateISO(now);
-  const max = new Date(now); max.setDate(max.getDate()+7);
-  if(date < today) return 'Past dates cannot be booked.';
-  if(date > localDateISO(max)) return 'Bookings can only be made up to 7 days in advance.';
-  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time || '')) return 'Please choose a valid time.';
-  const minutes = Number(state.time.slice(0,2))*60 + Number(state.time.slice(3));
-  const windows = {breakfast:[360,719],lunch:[720,959],dinner:[1080,1379],latenight:[1200,1439]};
-  const window = windows[state.meal];
-  if(window && (minutes < window[0] || minutes > window[1])) return 'Selected time does not match the chosen meal. Please change the time or meal.';
-  if(date === today && minutes <= now.getHours()*60 + now.getMinutes()) return 'This time has already passed. Please select an upcoming time today.';
+  if(date<now.date) return 'Past dates cannot be booked (India time).';
+  if(date>indiaDateOffset(7)) return 'Bookings can only be made up to 7 days in advance.';
+  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time||'')) return 'Please choose a valid time.';
+  const minutes=Number(state.time.slice(0,2))*60+Number(state.time.slice(3));
+  const window=MEAL_WINDOWS[state.meal];
+  if(window && (minutes<window[0]||minutes>window[1])) return 'Selected time does not match the chosen meal.';
+  if(date===now.date && window && now.minutes>=window[1]) return 'This meal slot has already ended today (IST).';
+  if(date===now.date && minutes<=now.minutes) return 'This time has already passed in India. Select an upcoming time.';
   return null;
 }
 function validateStep(idx){
-  const todayD = new Date(); todayD.setHours(0,0,0,0);
-  const maxD = new Date(); maxD.setDate(maxD.getDate()+7); maxD.setHours(23,59,59,999);
+  const todayD = new Date(indiaNow().date+'T00:00:00Z');
+  const maxD = new Date(indiaDateOffset(7)+'T23:59:59Z');
   switch(idx){
     case 0: if(!state.location) return 'Please choose a location option.'; break;
     case 1: if(!state.distance) return 'Please select a search distance.'; break;
-    case 2: if(!state.meal) return 'Please select a meal.'; break;
+    case 2: if(!state.meal) return 'Please select an available meal.'; if(state.date==='Today' && mealExpiredToday(state.meal)) return 'This meal has already ended today (IST).'; break;
     case 3:
       if(!state.date) return 'Please choose a date option.';
       if(state.date === 'Custom'){
