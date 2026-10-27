@@ -1651,7 +1651,16 @@ function syncBookingTimeUI(){
   first.value='';first.textContent=expired?'No times available today':'Select a time (IST)';
   input.appendChild(first);
   if(!expired){
-    for(let m=Math.ceil(minMinutes/15)*15;m<=window[1];m+=15){
+    const slots=[];
+    if(selected===now.date){
+      const first=now.minutes+15;
+      if(first>=window[0] && first<=window[1]) slots.push(first);
+    }
+    for(let m=Math.ceil(minMinutes/30)*30;m<=window[1];m+=30){
+      if(!slots.includes(m)) slots.push(m);
+    }
+    slots.sort((a,b)=>a-b);
+    for(const m of slots){
       const option=document.createElement('option');
       option.value=hhmm(m);option.textContent=hhmm(m);
       input.appendChild(option);
