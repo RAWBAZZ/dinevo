@@ -1444,7 +1444,8 @@ const steps = [
         const dateEl = document.getElementById('customDate');
         dateEl.min = toISO(todayD);
         dateEl.max = toISO(maxD);
-        if(state.customDateValue) dateEl.value = state.customDateValue;
+        if(state.customDateValue && state.customDateValue >= toISO(todayD) && state.customDateValue <= toISO(maxD)) dateEl.value = state.customDateValue;
+        else state.customDateValue = '';
         dateEl.oninput = (e)=>{
           const val = e.target.value;
           if(val < toISO(todayD)){ e.target.value = toISO(todayD); }
@@ -1545,7 +1546,8 @@ function wireStep(){
       state[el.dataset.key] = el.dataset.val;
       bodyEl.querySelectorAll(`.chip[data-key="${el.dataset.key}"]`).forEach(x=>x.classList.remove('sel'));
       el.classList.add('sel');
-      if(el.dataset.val==='Custom'){ document.getElementById('customDate').style.display='block'; }
+      const customDate = document.getElementById('customDate');
+      if(customDate) customDate.style.display = el.dataset.val==='Custom' ? 'block' : 'none';
     };
   });
   bodyEl.querySelectorAll('[data-bill]').forEach(el=>{
@@ -1574,6 +1576,27 @@ function wireStep(){
   });
 }
 
+function bookingDateISO(){
+  const d = new Date();
+  if(state.date === 'Tomorrow') d.setDate(d.getDate()+1);
+  return state.date === 'Custom' ? state.customDateValue : localDateISO(d);
+}
+function bookingTimeError(){
+  const date = bookingDateISO();
+  if(!date) return 'Please pick a specific date.';
+  const now = new Date();
+  const today = localDateISO(now);
+  const max = new Date(now); max.setDate(max.getDate()+7);
+  if(date < today) return 'Past dates cannot be booked.';
+  if(date > localDateISO(max)) return 'Bookings can only be made up to 7 days in advance.';
+  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time || '')) return 'Please choose a valid time.';
+  const minutes = Number(state.time.slice(0,2))*60 + Number(state.time.slice(3));
+  const windows = {breakfast:[360,719],lunch:[720,959],dinner:[1080,1379],latenight:[1200,1439]};
+  const window = windows[state.meal];
+  if(window && (minutes < window[0] || minutes > window[1])) return 'Selected time does not match the chosen meal. Please change the time or meal.';
+  if(date === today && minutes <= now.getHours()*60 + now.getMinutes()) return 'This time has already passed. Please select an upcoming time today.';
+  return null;
+}
 function validateStep(idx){
   const todayD = new Date(); todayD.setHours(0,0,0,0);
   const maxD = new Date(); maxD.setDate(maxD.getDate()+7); maxD.setHours(23,59,59,999);
@@ -1590,6 +1613,7 @@ function validateStep(idx){
         if(picked > maxD) return 'Bookings can only be made up to 7 days in advance.';
       }
       if(!state.time) return 'Please choose a time.';
+      { const error = bookingTimeError(); if(error) return error; }
       break;
     case 4: if(state.adults < 1) return 'At least 1 adult guest is required.'; break;
     case 5: if(!state.foodType) return 'Please select a food preference.'; break;
@@ -1616,7 +1640,7 @@ document.getElementById('nextBtn').onclick = ()=>{
   if(err){ showStepError(err); return; }
   showStepError(null);
   if(current < steps.length-1){ current++; renderStep(); }
-  else{ openResultsPage(); }
+  else{ const timingError = bookingTimeError(); if(timingError){ current = 3; renderStep(); showStepError(timingError); return; } openResultsPage(); }
 };
 document.getElementById('backBtn').onclick = ()=>{ showStepError(null); if(current>0){ current--; renderStep(); } };
 
