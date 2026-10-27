@@ -1652,7 +1652,7 @@ function syncBookingTimeUI(){
     opt.textContent=label+(m>=1440?' (next day)':'');
     input.appendChild(opt);
   }
-  if(slots.includes(prev)&&Array.from(input.options).some(o=>o.value===String(prev)))input.value=String(prev);
+  if(Array.from(input.options).some(o=>o.value===String(prev)))input.value=String(prev);
   else{input.value='';state.time='';state.bookingDayOffset=0;}
   const hint=document.getElementById('bookingTimeHint');
   if(hint)hint.textContent=input.options.length>1?'Select an available time (IST). Late night runs until 02:00 next day.':'No available times for this date. Choose another date.';
@@ -1662,7 +1662,7 @@ function bookingTimeError(){
   if(!date)return 'Please select a date.';
   if(date<today)return 'Past dates cannot be booked (IST).';
   if(date>indiaDateOffset(7))return 'Bookings can only be made up to 7 days in advance.';
-  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time||''))return 'Please select an available time.';
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(state.time||''))return 'Please select an available time.';
   const m=Number(state.time.slice(0,2))*60+Number(state.time.slice(3))+1440*(state.bookingDayOffset||0);
   const start=Date.parse(date+'T00:00:00+05:30');
   if(!Number.isFinite(start)||start+m*60000<Date.now()+14*60000)return 'This time has passed. Select an upcoming slot (IST).';
