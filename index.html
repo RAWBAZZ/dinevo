@@ -1611,7 +1611,7 @@ function indiaNow(){
   const v = Object.fromEntries(parts.map(p=>[p.type,p.value]));
   return {date:v.year+'-'+v.month+'-'+v.day, minutes:Number(v.hour)*60+Number(v.minute)};
 }
-const MEAL_WINDOWS = {breakfast:[360,719],lunch:[720,959],dinner:[1080,1379],latenight:[1200,1439]};
+const MEAL_WINDOWS = {breakfast:[360,719],lunch:[720,959],dinner:[1080,1379],latenight:[1200,1560]};
 function indiaDateOffset(days){
   const base = new Date(indiaNow().date+'T12:00:00Z');
   base.setUTCDate(base.getUTCDate()+days);
@@ -1641,9 +1641,9 @@ function syncBookingTimeUI(){
   if(!input) return;
   const dateInput=document.getElementById('customDate');
   const now=indiaNow(), selected=bookingDateISO();
-  const window=MEAL_WINDOWS[state.meal]||[0,1439];
+  const window=MEAL_WINDOWS[state.meal]||[0,1560];
   const minMinutes=selected===now.date?Math.max(window[0],now.minutes+1):window[0];
-  const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  const hhmm=m=>String(Math.floor((m%1440)/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
   const expired=selected===now.date && minMinutes>window[1];
   const previous=state.time;
   input.innerHTML='';
@@ -1662,7 +1662,7 @@ function syncBookingTimeUI(){
     slots.sort((a,b)=>a-b);
     for(const m of slots){
       const option=document.createElement('option');
-      option.value=hhmm(m);option.textContent=hhmm(m);
+      option.value=hhmm(m);option.textContent=hhmm(m)+(m>=1440?' (next day)':'');
       input.appendChild(option);
     }
   }
@@ -1679,7 +1679,8 @@ function bookingTimeError(){
   if(date<now.date) return 'Past dates cannot be booked (India time).';
   if(date>indiaDateOffset(7)) return 'Bookings can only be made up to 7 days in advance.';
   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(state.time||'')) return 'Please choose a valid time.';
-  const minutes=Number(state.time.slice(0,2))*60+Number(state.time.slice(3));
+  const clockMinutes=Number(state.time.slice(0,2))*60+Number(state.time.slice(3));
+  const minutes=state.meal==='latenight' && clockMinutes<=120 ? clockMinutes+1440 : clockMinutes;
   const window=MEAL_WINDOWS[state.meal];
   if(window && (minutes<window[0]||minutes>window[1])) return 'Selected time does not match the chosen meal.';
   if(date===now.date && window && now.minutes>=window[1]) return 'This meal slot has already ended today (IST).';
