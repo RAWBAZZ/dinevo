@@ -1417,7 +1417,7 @@ const steps = [
       </div>
       <div class="datetime-row">
         <input type="date" id="customDate" />
-        <input type="time" id="timeSlot" value="${state.time || '20:30'}" />
+        <input type="text" id="timeSlot" inputmode="numeric" maxlength="5" placeholder="HH:MM (24h)" aria-label="Time in 24-hour format" value="${state.time || '20:30'}" />
       </div><div id="bookingTimeHint" style="font-size:12px;color:var(--text-dim);margin-top:10px;" aria-live="polite"></div><div style="display:none">
       </div>`;
       setTimeout(()=>{
@@ -1657,7 +1657,7 @@ function bookingTimeError(){
   if(!date) return 'Please pick a specific date.';
   if(date<now.date) return 'Past dates cannot be booked (India time).';
   if(date>indiaDateOffset(7)) return 'Bookings can only be made up to 7 days in advance.';
-  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time||'')) return 'Please choose a valid time.';
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(state.time||'')) return 'Please choose a valid time.';
   const minutes=Number(state.time.slice(0,2))*60+Number(state.time.slice(3));
   const window=MEAL_WINDOWS[state.meal];
   if(window && (minutes<window[0]||minutes>window[1])) return 'Selected time does not match the chosen meal.';
