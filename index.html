@@ -1417,7 +1417,7 @@ const steps = [
       </div>
       <div class="datetime-row">
         <input type="date" id="customDate" />
-        <input type="text" id="timeSlot" inputmode="numeric" maxlength="5" placeholder="HH:MM (24h)" aria-label="Time in 24-hour format" value="${state.time || '20:30'}" />
+        <select id="timeSlot" aria-label="Select booking time" style="width:100%;padding:14px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;font:inherit;"></select>
       </div><div id="bookingTimeHint" style="font-size:12px;color:var(--text-dim);margin-top:10px;" aria-live="polite"></div><div style="display:none">
       </div>`;
       setTimeout(()=>{
@@ -1436,7 +1436,7 @@ const steps = [
           state.customDateValue = e.target.value;
           syncBookingTimeUI();
         };
-        document.getElementById('timeSlot').oninput = (e)=> state.time = e.target.value;
+        document.getElementById('timeSlot').onchange = (e)=> state.time = e.target.value;
         syncBookingTimeUI();
       },0);
     }},
@@ -1644,12 +1644,24 @@ function syncBookingTimeUI(){
   const window=MEAL_WINDOWS[state.meal]||[0,1439];
   const minMinutes=selected===now.date?Math.max(window[0],now.minutes+1):window[0];
   const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
-  input.min=hhmm(Math.min(minMinutes,1439));
-  input.max=hhmm(window[1]);
   const expired=selected===now.date && minMinutes>window[1];
+  const previous=state.time;
+  input.innerHTML='';
+  const first=document.createElement('option');
+  first.value='';first.textContent=expired?'No times available today':'Select a time (IST)';
+  input.appendChild(first);
+  if(!expired){
+    for(let m=Math.ceil(minMinutes/15)*15;m<=window[1];m+=15){
+      const option=document.createElement('option');
+      option.value=hhmm(m);option.textContent=hhmm(m);
+      input.appendChild(option);
+    }
+  }
+  input.value=Array.from(input.options).some(o=>o.value===previous)?previous:'';
+  state.time=input.value;
   input.disabled=expired;
   const note=document.getElementById('bookingTimeHint');
-  if(note) note.textContent=expired?'This meal slot has ended today (IST). Select another meal or date.':'Available time (IST): '+hhmm(minMinutes)+' – '+hhmm(window[1]);
+  if(note) note.textContent=expired?'This meal slot has ended today (IST). Select another date.':'Available time (IST): '+hhmm(minMinutes)+' – '+hhmm(window[1]);
   if(dateInput) dateInput.style.display=state.date==='Custom'?'block':'none';
 }
 function bookingTimeError(){
