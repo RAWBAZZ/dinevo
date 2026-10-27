@@ -851,13 +851,13 @@ body:has(.results-overlay.show) #authAvatarWrap,body:has(.payment-overlay.show) 
     <div class="section-head reveal">
       <div class="eyebrow" style="justify-content:center">Book a table</div>
       <h2>Tell us what you're after</h2>
-      <p>Eight quick taps and your request goes out to every restaurant that can actually serve it.</p>
+      <p>Seven quick taps and your request goes out to every restaurant that can actually serve it.</p>
     </div>
 
     <div class="wizard-card reveal">
       <div class="progress-dots" id="dots"></div>
       <div class="step-label">
-        <div class="num mono" id="stepNum">STEP 1 / 8</div>
+        <div class="num mono" id="stepNum">STEP 1 / 7</div>
         <h3 id="stepTitle">Where are you dining?</h3>
         <p id="stepSub">Share your location so we can find tables nearby.</p>
       </div>
@@ -1423,7 +1423,7 @@ const steps = [
       setTimeout(()=>{
         const todayD = new Date(indiaNow().date+'T12:00:00Z');
         const maxD = new Date(indiaDateOffset(7)+'T12:00:00Z');
-        const toISO = localDateISO;
+        const toISO = d=>d.toISOString().slice(0,10);
         const dateEl = document.getElementById('customDate');
         dateEl.min = toISO(todayD);
         dateEl.max = toISO(maxD);
@@ -1436,18 +1436,9 @@ const steps = [
           state.customDateValue = e.target.value;
           syncBookingTimeUI();
         };
-        document.getElementById('timeSlot').onchange = (e)=> state.time = e.target.value;
+        document.getElementById('timeSlot').onchange = (e)=> {const m=Number(e.target.value);if(e.target.value===''){state.time='';return;} state.time=String(Math.floor((m%1440)/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');state.bookingDayOffset=Math.floor(m/1440);state.meal=mealForMinute(m);};
         syncBookingTimeUI();
       },0);
-    }},
-  { title:"Which meal?", sub:"This decides which kitchens are even open.",
-    render:(body)=>{
-      body.innerHTML = `<div class="option-grid">
-        ${opt('🍳','Breakfast','meal','breakfast')}
-        ${opt('🍛','Lunch','meal','lunch')}
-        ${opt('🍽️','Dinner','meal','dinner')}
-        ${opt('🌙','Late Night','meal','latenight')}
-      </div>`;
     }},
   { title:"How far can we look?", sub:"Select your preferred distance. Some restaurant locations may not be verified yet.",
     render: (body)=>{
@@ -1530,7 +1521,7 @@ function renderStep(){
   steps[current].render(bodyEl);
   renderDots();
   wireStep();
-  syncMealOptions();
+
   if(current===0) syncLocationUI();
   const errEl = document.getElementById('stepError');
   if(errEl){ errEl.style.display = 'none'; errEl.textContent = ''; }
@@ -1620,95 +1611,85 @@ function indiaDateOffset(days){
 function bookingDateISO(){
   return state.date==='Custom' ? state.customDateValue : indiaDateOffset(state.date==='Tomorrow'?1:0);
 }
-function mealExpiredToday(meal){
-  const w=MEAL_WINDOWS[meal];
-  return !!w && indiaNow().minutes>=w[1];
+function mealForMinute(m){
+  const t=m%1440;
+  if(t<360||t>=1200) return 'latenight';
+  if(t<720) return 'breakfast';
+  if(t<960) return 'lunch';
+  return 'dinner';
 }
-function syncMealOptions(){
-  if(current!==2) return;
-  const today=state.date!=='Tomorrow' && !(state.date==='Custom' && state.customDateValue!==indiaNow().date);
-  bodyEl.querySelectorAll('.opt[data-key="meal"]').forEach(el=>{
-    const expired=today && mealExpiredToday(el.dataset.val);
-    el.style.opacity=expired?'.35':'';
-    el.style.cursor=expired?'not-allowed':'';
-    el.setAttribute('aria-disabled',String(expired));
-    if(expired){el.classList.remove('sel');el.title='This meal has ended today (India time)';}
-  });
-  if(today && mealExpiredToday(state.meal)) state.meal=null;
+function bookingStartISO(){
+  const date=bookingDateISO();
+  const base=Date.parse(date+'T00:00:00+05:30');
+  const t=Number((state.time||'').slice(0,2))*60+Number((state.time||'').slice(3));
+  return new Date(base+((state.bookingDayOffset||0)*1440+t)*60000).toISOString();
 }
 function syncBookingTimeUI(){
   const input=document.getElementById('timeSlot');
-  if(!input) return;
+  if(!input)return;
   const dateInput=document.getElementById('customDate');
-  const now=indiaNow(), selected=bookingDateISO();
-  const window=MEAL_WINDOWS[state.meal]||[0,1560];
-  const minMinutes=selected===now.date?Math.max(window[0],now.minutes+1):window[0];
-  const hhmm=m=>String(Math.floor((m%1440)/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
-  const expired=selected===now.date && minMinutes>window[1];
-  const previous=state.time;
-  input.innerHTML='';
-  const first=document.createElement('option');
-  first.value='';first.textContent=expired?'No times available today':'Select a time (IST)';
-  input.appendChild(first);
-  if(!expired){
-    const slots=[];
-    if(selected===now.date){
-      const first=now.minutes+15;
-      if(first>=window[0] && first<=window[1]) slots.push(first);
-    }
-    for(let m=Math.ceil(minMinutes/30)*30;m<=window[1];m+=30){
-      if(!slots.includes(m)) slots.push(m);
-    }
-    slots.sort((a,b)=>a-b);
-    for(const m of slots){
-      const option=document.createElement('option');
-      option.value=hhmm(m);option.textContent=hhmm(m)+(m>=1440?' (next day)':'');
-      input.appendChild(option);
-    }
+  if(dateInput)dateInput.style.display=state.date==='Custom'?'block':'none';
+  const date=bookingDateISO();
+  const now=Date.now();
+  const start=Date.parse(date+'T00:00:00+05:30');
+  const minAllowed=now+15*60000;
+  const prev=state.time?Number(state.time.slice(0,2))*60+Number(state.time.slice(3))+1440*(state.bookingDayOffset||0):-1;
+  input.innerHTML='<option value="">Select a time (IST)</option>';
+  if(!date||!Number.isFinite(start))return;
+  const slots=[];
+  const first=Math.ceil((minAllowed-start)/60000);
+  if(first>=0&&first<=1560)slots.push(first);
+  for(let m=0;m<=1560;m+=30)if(!slots.includes(m))slots.push(m);
+  slots.sort((a,b)=>a-b);
+  for(const m of slots){
+    if(start+m*60000<minAllowed)continue;
+    const clock=m%1440;
+    if(clock>=120&&clock<360)continue;
+    if(m>1440&&clock>120)continue;
+    const label=String(Math.floor(clock/60)).padStart(2,'0')+':'+String(clock%60).padStart(2,'0');
+    const opt=document.createElement('option');
+    opt.value=String(m);
+    opt.textContent=label+(m>=1440?' (next day)':'');
+    input.appendChild(opt);
   }
-  input.value=Array.from(input.options).some(o=>o.value===previous)?previous:'';
-  state.time=input.value;
-  input.disabled=expired;
-  const note=document.getElementById('bookingTimeHint');
-  if(note) note.textContent=expired?'This meal slot has ended today (IST). Select another date.':'Available time (IST): '+hhmm(minMinutes)+' – '+hhmm(window[1]);
-  if(dateInput) dateInput.style.display=state.date==='Custom'?'block':'none';
+  if(slots.includes(prev)&&Array.from(input.options).some(o=>o.value===String(prev)))input.value=String(prev);
+  else{input.value='';state.time='';state.bookingDayOffset=0;}
+  const hint=document.getElementById('bookingTimeHint');
+  if(hint)hint.textContent=input.options.length>1?'Select an available time (IST). Late night runs until 02:00 next day.':'No available times for this date. Choose another date.';
 }
 function bookingTimeError(){
-  const date=bookingDateISO(), now=indiaNow();
-  if(!date) return 'Please pick a specific date.';
-  if(date<now.date) return 'Past dates cannot be booked (India time).';
-  if(date>indiaDateOffset(7)) return 'Bookings can only be made up to 7 days in advance.';
-  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(state.time||'')) return 'Please choose a valid time.';
-  const clockMinutes=Number(state.time.slice(0,2))*60+Number(state.time.slice(3));
-  const minutes=state.meal==='latenight' && clockMinutes<=120 ? clockMinutes+1440 : clockMinutes;
-  const window=MEAL_WINDOWS[state.meal];
-  if(window && (minutes<window[0]||minutes>window[1])) return 'Selected time does not match the chosen meal.';
-  if(date===now.date && window && now.minutes>=window[1]) return 'This meal slot has already ended today (IST).';
-  if(date===now.date && minutes<=now.minutes) return 'This time has already passed in India. Select an upcoming time.';
+  const date=bookingDateISO(), today=indiaNow().date;
+  if(!date)return 'Please select a date.';
+  if(date<today)return 'Past dates cannot be booked (IST).';
+  if(date>indiaDateOffset(7))return 'Bookings can only be made up to 7 days in advance.';
+  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.time||''))return 'Please select an available time.';
+  const m=Number(state.time.slice(0,2))*60+Number(state.time.slice(3))+1440*(state.bookingDayOffset||0);
+  const start=Date.parse(date+'T00:00:00+05:30');
+  if(!Number.isFinite(start)||start+m*60000<Date.now()+14*60000)return 'This time has passed. Select an upcoming slot (IST).';
+  if(m>1560||(m%1440>=120&&m%1440<360))return 'This time is outside booking hours.';
   return null;
 }
 function validateStep(idx){
   const todayD = new Date(indiaNow().date+'T00:00:00Z');
   const maxD = new Date(indiaDateOffset(7)+'T23:59:59Z');
-  switch(idx===1?3:idx===3?1:idx){
+  switch(idx){
     case 0: if(!state.location) return 'Please choose a location option.'; if(state.location==='current' && !state.coordinates) return 'Allow location access to continue.'; if(state.location==='search' && !(state.locationText||'').trim()) return 'Enter an area or PIN code.'; break;
-    case 1: if(!state.distance) return 'Please select a search distance.'; break;
-    case 2: if(!state.meal) return 'Please select an available meal.'; if(state.date==='Today' && mealExpiredToday(state.meal)) return 'This meal has already ended today (IST).'; break;
+    case 2: if(!state.distance) return 'Please select a search distance.'; break;
     case 3:
       if(!state.date) return 'Please choose a date option.';
       if(state.date === 'Custom'){
         if(!state.customDateValue) return 'Please pick a specific date.';
-        const picked = new Date(state.customDateValue + 'T00:00:00');
+        const picked = new Date(state.customDateValue + 'T00:00:00Z');
         if(picked < todayD) return 'That date has already passed — please pick a future date.';
         if(picked > maxD) return 'Bookings can only be made up to 7 days in advance.';
       }
       if(!state.time) return 'Please choose a time.';
       { const error = bookingTimeError(); if(error) return error; }
       break;
-    case 4: if(state.adults < 1) return 'At least 1 adult guest is required.'; break;
-    case 5: if(!state.foodType) return 'Please select a food preference.'; break;
-    case 6: break; // cuisine is optional
-    case 7:
+    case 3: if(state.adults < 1) return 'At least 1 adult guest is required.'; break;
+    case 4: if(!state.foodType) return 'Please select a food preference.'; break;
+    case 5: break; // cuisine is optional
+    case 6:
       if(!state.bill) return 'Please select an expected bill.';
       if(state.bill === 'Custom'){
         const n = parseInt(state.customBillValue, 10);
@@ -2026,16 +2007,10 @@ function formatTime(t){
 function localDateISO(date){
   return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
-function bookingDateISO(){
-  if(state.date === 'Custom') return state.customDateValue;
-  const date = new Date();
-  if(state.date === 'Tomorrow') date.setDate(date.getDate()+1);
-  return localDateISO(date);
-}
 let quoteAttempt=null;
 async function pushRequestsToStorage(){
   if(!dinevoAuth.getUser()) throw new Error('Please sign in first.');
-  for(const step of [2,3,4,5,7]){const err=validateStep(step);if(err)throw new Error(err);}
+  for(const step of [0,1,2,3,4,6]){const err=validateStep(step);if(err)throw new Error(err);}
   const ids=[...selectedRests].map(name=>restaurantData.find(r=>r.name===name)?.id).filter(Boolean).sort();
   if(ids.length!==selectedRests.size) throw new Error('Refresh the restaurant list and select again.');
   const {data:liveSlots,error:availabilityError}=await sb.rpc('d2_available');
@@ -2044,7 +2019,7 @@ async function pushRequestsToStorage(){
   const openForParty=new Set((liveSlots||[]).filter(slot=>Number(slot.remaining)>=party&&Number(slot.max_party)>=party).map(slot=>slot.restaurant_id));
   const closed=ids.filter(id=>!openForParty.has(id)).map(id=>restaurantData.find(r=>r.id===id)?.name||'A selected restaurant');
   if(closed.length) throw new Error(closed.join(', ')+' is opening soon and cannot receive a request right now. Remove it and try again.');
-  const payload={p_restaurants:ids,p_start:new Date(bookingDateISO()+'T'+state.time+':00+05:30').toISOString(),p_party:state.adults+state.kids,p_bill:Math.round(Number(String(state.bill==='Custom'?state.customBillValue:state.bill).replace(/[^0-9.]/g,''))*100),p_preferences:{food:foodLabels[state.foodType],cuisines:state.cuisines.join(', '),meal:mealLabels[state.meal],adults:state.adults,kids:state.kids}};
+  const payload={p_restaurants:ids,p_start:bookingStartISO(),p_party:state.adults+state.kids,p_bill:Math.round(Number(String(state.bill==='Custom'?state.customBillValue:state.bill).replace(/[^0-9.]/g,''))*100),p_preferences:{food:foodLabels[state.foodType],cuisines:state.cuisines.join(', '),meal:mealLabels[state.meal],adults:state.adults,kids:state.kids}};
   const signature=JSON.stringify(payload);
   if(!quoteAttempt||quoteAttempt.signature!==signature)quoteAttempt={signature,id:crypto.randomUUID()};
   const {data,error}=await sb.rpc('d2_request_quotes',{...payload,p_batch:quoteAttempt.id});
