@@ -1644,7 +1644,7 @@ function syncBookingTimeUI(){
   for(const m of slots){
     if(start+m*60000<minAllowed)continue;
     const clock=m%1440;
-    if(clock>=120&&clock<360)continue;
+    if(clock>120&&clock<360)continue;
     if(m>1440&&clock>120)continue;
     const label=String(Math.floor(clock/60)).padStart(2,'0')+':'+String(clock%60).padStart(2,'0');
     const opt=document.createElement('option');
@@ -1666,7 +1666,7 @@ function bookingTimeError(){
   const m=Number(state.time.slice(0,2))*60+Number(state.time.slice(3))+1440*(state.bookingDayOffset||0);
   const start=Date.parse(date+'T00:00:00+05:30');
   if(!Number.isFinite(start)||start+m*60000<Date.now()+14*60000)return 'This time has passed. Select an upcoming slot (IST).';
-  if(m>1560||(m%1440>=120&&m%1440<360))return 'This time is outside booking hours.';
+  if(m>1560||(m%1440>120&&m%1440<360))return 'This time is outside booking hours.';
   return null;
 }
 function validateStep(idx){
@@ -1675,7 +1675,7 @@ function validateStep(idx){
   switch(idx){
     case 0: if(!state.location) return 'Please choose a location option.'; if(state.location==='current' && !state.coordinates) return 'Allow location access to continue.'; if(state.location==='search' && !(state.locationText||'').trim()) return 'Enter an area or PIN code.'; break;
     case 2: if(!state.distance) return 'Please select a search distance.'; break;
-    case 3:
+    case 1:
       if(!state.date) return 'Please choose a date option.';
       if(state.date === 'Custom'){
         if(!state.customDateValue) return 'Please pick a specific date.';
