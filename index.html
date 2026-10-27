@@ -1408,25 +1408,7 @@ const steps = [
       body.innerHTML = `<div class="option-grid">
         ${opt('📍','Use current location','location','current')}
         ${opt('🔎','Search a location','location','search')}
-      </div>`;
-    }},
-  { title:"How far can we look?", sub:"Select your preferred distance. Some restaurant locations may not be verified yet.",
-    render: (body)=>{
-      body.innerHTML = `<div class="option-grid">
-        ${opt('①','Within 1 KM','distance','1')}
-        ${opt('②','Within 2 KM','distance','2')}
-        ${opt('③','Within 3 KM','distance','3')}
-        ${opt('⑤','Within 5 KM','distance','5')}
-      </div>`;
-    }},
-  { title:"Which meal?", sub:"This decides which kitchens are even open.",
-    render:(body)=>{
-      body.innerHTML = `<div class="option-grid">
-        ${opt('🍳','Breakfast','meal','breakfast')}
-        ${opt('🍛','Lunch','meal','lunch')}
-        ${opt('🍽️','Dinner','meal','dinner')}
-        ${opt('🌙','Late Night','meal','latenight')}
-      </div>`;
+      </div><div id="locationDetails" style="margin-top:14px;font-size:12px;color:var(--text-dim);" aria-live="polite"></div><input id="locationQuery" type="text" placeholder="Enter area, locality or PIN code" style="display:none;width:100%;margin-top:12px;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;" />`;
     }},
   { title:"Date & time", sub:"When should the table be ready?",
     render:(body)=>{
@@ -1457,6 +1439,24 @@ const steps = [
         document.getElementById('timeSlot').oninput = (e)=> state.time = e.target.value;
         syncBookingTimeUI();
       },0);
+    }},
+  { title:"Which meal?", sub:"This decides which kitchens are even open.",
+    render:(body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('🍳','Breakfast','meal','breakfast')}
+        ${opt('🍛','Lunch','meal','lunch')}
+        ${opt('🍽️','Dinner','meal','dinner')}
+        ${opt('🌙','Late Night','meal','latenight')}
+      </div>`;
+    }},
+  { title:"How far can we look?", sub:"Select your preferred distance. Some restaurant locations may not be verified yet.",
+    render: (body)=>{
+      body.innerHTML = `<div class="option-grid">
+        ${opt('①','Within 1 KM','distance','1')}
+        ${opt('②','Within 2 KM','distance','2')}
+        ${opt('③','Within 3 KM','distance','3')}
+        ${opt('⑤','Within 5 KM','distance','5')}
+      </div>`;
     }},
   { title:"Number of guests", sub:"We'll pass the exact split to every restaurant.",
     render:(body)=>{
@@ -1531,6 +1531,7 @@ function renderStep(){
   renderDots();
   wireStep();
   syncMealOptions();
+  if(current===0) syncLocationUI();
   const errEl = document.getElementById('stepError');
   if(errEl){ errEl.style.display = 'none'; errEl.textContent = ''; }
   document.getElementById('backBtn').disabled = current===0;
@@ -1542,6 +1543,7 @@ function wireStep(){
     el.onclick = ()=>{
       if(el.dataset.key==='meal' && el.getAttribute('aria-disabled')==='true') return;
       state[el.dataset.key] = el.dataset.val;
+      if(el.dataset.key==='location') selectLocation(el.dataset.val);
       bodyEl.querySelectorAll(`.opt[data-key="${el.dataset.key}"]`).forEach(x=>x.classList.remove('sel'));
       el.classList.add('sel');
     };
@@ -1582,6 +1584,28 @@ function wireStep(){
   });
 }
 
+function syncLocationUI(){
+  const input=document.getElementById('locationQuery');
+  const note=document.getElementById('locationDetails');
+  if(input){
+    input.style.display=state.location==='search'?'block':'none';
+    input.value=state.locationText||'';
+    input.oninput=()=>{state.locationText=input.value.trim();if(note) note.textContent=state.locationText?'Searching around: '+state.locationText:'Enter a locality or PIN code.';};
+  }
+  if(note && state.location==='current') note.textContent=state.coordinates?'Location detected.':'Allow browser location permission to find nearby restaurants.';
+  if(note && state.location==='search') note.textContent=state.locationText?'Searching around: '+state.locationText:'Enter a locality or PIN code.';
+}
+function selectLocation(value){
+  if(value==='search'){syncLocationUI();return;}
+  if(value!=='current') return;
+  const note=document.getElementById('locationDetails');
+  if(!navigator.geolocation){if(note) note.textContent='Location is not supported by this browser.';return;}
+  if(note) note.textContent='Detecting your location…';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    state.coordinates={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    if(note) note.textContent='Location detected successfully.';
+  },()=>{state.coordinates=null;if(note) note.textContent='Location access denied or unavailable. Enable location permission, or search an area instead.';},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+}
 function indiaNow(){
   const parts = new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
   const v = Object.fromEntries(parts.map(p=>[p.type,p.value]));
@@ -1644,8 +1668,8 @@ function bookingTimeError(){
 function validateStep(idx){
   const todayD = new Date(indiaNow().date+'T00:00:00Z');
   const maxD = new Date(indiaDateOffset(7)+'T23:59:59Z');
-  switch(idx){
-    case 0: if(!state.location) return 'Please choose a location option.'; break;
+  switch(idx===1?3:idx===3?1:idx){
+    case 0: if(!state.location) return 'Please choose a location option.'; if(state.location==='current' && !state.coordinates) return 'Allow location access to continue.'; if(state.location==='search' && !(state.locationText||'').trim()) return 'Enter an area or PIN code.'; break;
     case 1: if(!state.distance) return 'Please select a search distance.'; break;
     case 2: if(!state.meal) return 'Please select an available meal.'; if(state.date==='Today' && mealExpiredToday(state.meal)) return 'This meal has already ended today (IST).'; break;
     case 3:
@@ -1684,7 +1708,7 @@ document.getElementById('nextBtn').onclick = ()=>{
   if(err){ showStepError(err); return; }
   showStepError(null);
   if(current < steps.length-1){ current++; renderStep(); }
-  else{ const timingError = bookingTimeError(); if(timingError){ current = 3; renderStep(); showStepError(timingError); return; } openResultsPage(); }
+  else{ const timingError = bookingTimeError(); if(timingError){ current = 1; renderStep(); showStepError(timingError); return; } openResultsPage(); }
 };
 document.getElementById('backBtn').onclick = ()=>{ showStepError(null); if(current>0){ current--; renderStep(); } };
 
