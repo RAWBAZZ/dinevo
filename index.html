@@ -1463,16 +1463,18 @@ const steps = [
         ${opt('🟢','Veg Only','foodType','veg')}
         ${opt('🔴','Non-Veg Only','foodType','nonveg')}
         ${opt('🟡','Veg & Non-Veg','foodType','both')}
+      </div><details class="preference-more" style="margin-top:16px"><summary style="cursor:pointer;color:var(--gold);padding:12px 4px">More Options</summary><div class="option-grid" style="margin-top:12px">
         ${opt('🟠','Jain Food','foodType','jain')}
         ${opt('💠','Pure Veg Restaurant','foodType','pureveg')}
         ${opt('🌱','Vegan','foodType','vegan')}
         ${opt('🌾','Gluten-Free','foodType','glutenfree')}
+      </div></details><div style="display:none">
       </div>`;
     }},
   { title:"Cuisine preference", sub:"Optional — pick as many as you like.",
     render:(body)=>{
       const cuisines = ['North Indian','South Indian','Chinese','Mughlai','Italian','Continental','Fast Food','Pizza','Biryani','BBQ','Seafood','Street Food','Cafe','Desserts','Multi Cuisine'];
-      body.innerHTML = `<div class="chip-row">` + cuisines.map(c=>`<button class="chip" data-cuisine="${c}">${c}</button>`).join('') + `</div>`;
+      body.innerHTML = `<div class="chip-row">` + cuisines.slice(0,3).map(c=>`<button class="chip" data-cuisine="${c}">${c}</button>`).join('') + `</div><details class="preference-more" style="margin-top:16px"><summary style="cursor:pointer;color:var(--gold);padding:12px 4px">More Options</summary><div class="chip-row" style="margin-top:12px">` + cuisines.slice(3).map(c=>`<button class="chip" data-cuisine="${c}">${c}</button>`).join('') + `</div></details>`;
       setTimeout(()=>{
         body.querySelectorAll('[data-cuisine]').forEach(b=>{
           if(state.cuisines.includes(b.dataset.cuisine)) b.classList.add('sel');
@@ -1765,7 +1767,10 @@ async function loadStatuses(){
     if(error) throw error;
     if(availabilityError) throw availabilityError;
     const openIds=new Set((availableSlots||[]).filter(slot=>Number(slot.remaining)>0).map(slot=>slot.restaurant_id));
-    restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:openIds.has(r.id)}));
+    // d2_available is a live snapshot, not availability for a future booking date.
+    const selectedDate=bookingDateISO();
+    const isToday=selectedDate===indiaNow().date;
+    restaurantData=(data||[]).map(r=>({...r,type:r.is_test?'test':'both',cuisine:r.cuisines.join(' · ')||'Cuisine details coming soon',rating:0,cost:'Not set',disc:'See available offers',menu:[],photos:[],open:openIds.has(r.id),availabilityUnknown:!isToday}));
     for(const name of selectedRests) if(!restaurantData.some(r=>r.name===name&&r.open)) selectedRests.delete(name);
     statusMap={};buildRestaurants();renderFavorites();renderEvents();syncRequestSelection();
   } catch(e) {
