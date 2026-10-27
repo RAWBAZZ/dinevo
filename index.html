@@ -1436,6 +1436,7 @@ const steps = [
       <div class="datetime-row">
         <input type="date" id="customDate" />
         <input type="time" id="timeSlot" value="${state.time || '20:30'}" />
+      </div><div id="bookingTimeHint" style="font-size:12px;color:var(--text-dim);margin-top:10px;" aria-live="polite"></div><div style="display:none">
       </div>`;
       setTimeout(()=>{
         const todayD = new Date();
@@ -1451,8 +1452,10 @@ const steps = [
           if(val < toISO(todayD)){ e.target.value = toISO(todayD); }
           if(val > toISO(maxD)){ e.target.value = toISO(maxD); }
           state.customDateValue = e.target.value;
+          syncBookingTimeUI();
         };
         document.getElementById('timeSlot').oninput = (e)=> state.time = e.target.value;
+        syncBookingTimeUI();
       },0);
     }},
   { title:"Number of guests", sub:"We'll pass the exact split to every restaurant.",
@@ -1548,6 +1551,7 @@ function wireStep(){
       el.classList.add('sel');
       const customDate = document.getElementById('customDate');
       if(customDate) customDate.style.display = el.dataset.val==='Custom' ? 'block' : 'none';
+      syncBookingTimeUI();
     };
   });
   bodyEl.querySelectorAll('[data-bill]').forEach(el=>{
@@ -1580,6 +1584,27 @@ function bookingDateISO(){
   const d = new Date();
   if(state.date === 'Tomorrow') d.setDate(d.getDate()+1);
   return state.date === 'Custom' ? state.customDateValue : localDateISO(d);
+}
+function syncBookingTimeUI(){
+  const input = document.getElementById('timeSlot');
+  const dateInput = document.getElementById('customDate');
+  if(!input) return;
+  const now = new Date();
+  const today = localDateISO(now);
+  const selected = bookingDateISO();
+  const ranges = {breakfast:['06:00','11:59'],lunch:['12:00','15:59'],dinner:['18:00','22:59'],latenight:['20:00','23:59']};
+  const range = ranges[state.meal] || ['00:00','23:59'];
+  let min = range[0];
+  if(selected === today){
+    const next = new Date(now.getTime()+60000);
+    const currentMin = String(next.getHours()).padStart(2,'0')+':'+String(next.getMinutes()).padStart(2,'0');
+    if(currentMin > min) min = currentMin;
+  }
+  input.min = min; input.max = range[1];
+  const note = document.getElementById('bookingTimeHint');
+  const expired = selected === today && min > range[1];
+  if(note) note.textContent = expired ? 'This meal slot has ended today. Choose another meal or date.' : 'Available time for '+(state.meal || 'your meal')+': '+min+'–'+range[1];
+  if(dateInput) dateInput.style.display = state.date === 'Custom' ? 'block' : 'none';
 }
 function bookingTimeError(){
   const date = bookingDateISO();
